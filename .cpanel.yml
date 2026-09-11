@@ -1,0 +1,17 @@
+---
+# cPanel > Git Version Control > "Deploy HEAD Commit" ile çalışır.
+# Uygulama dosyaları $HOME/personel altına kopyalanır; alan adının/alt alan adının
+# belge kökü (document root) $HOME/personel/public olmalıdır.
+# Ana alan adında belge kökü değiştirilemiyorsa: DEPLOYPATH'i $HOME/public_html yapın;
+# kökteki .htaccess istekleri public/ klasörüne yönlendirir.
+deployment:
+  tasks:
+    - export DEPLOYPATH=$HOME/personel
+    - /bin/mkdir -p $DEPLOYPATH
+    - /bin/cp -R app bootstrap config database lang public resources routes vendor artisan composer.json composer.lock .htaccess $DEPLOYPATH/
+    - /bin/rm -f $DEPLOYPATH/vendor/.gitignore
+    - test -d $DEPLOYPATH/storage || /bin/cp -R storage $DEPLOYPATH/
+    - /bin/mkdir -p $DEPLOYPATH/storage/framework/cache/data $DEPLOYPATH/storage/framework/sessions $DEPLOYPATH/storage/framework/views $DEPLOYPATH/storage/logs $DEPLOYPATH/bootstrap/cache
+    - /bin/rm -rf $DEPLOYPATH/storage/framework/views/*
+    - /bin/rm -f $DEPLOYPATH/bootstrap/cache/*.php
+    - /bin/chmod -R u+rwX $DEPLOYPATH/storage $DEPLOYPATH/bootstrap/cache

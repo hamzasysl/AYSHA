@@ -1,0 +1,232 @@
+@import 'tailwindcss';
+@import 'tom-select/dist/css/tom-select.css';
+@import 'flatpickr/dist/flatpickr.css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+
+/* ------------------------------------------------------------------
+   AYSHA tasarım sistemi — mezeSoft mavisi (#0d71b9) + cyan vurgu (#4bbfef)
+   ------------------------------------------------------------------ */
+@theme {
+    --font-sans: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --color-brand-50: #eef4ff;
+    --color-brand-100: #dbe7ff;
+    --color-brand-200: #bdd3ff;
+    --color-brand-300: #90b4ff;
+    --color-brand-400: #5c8dff;
+    --color-brand-500: #3573fb;
+    --color-brand-600: #1e6ff2;
+    --color-brand-700: #1557d6;
+    --color-brand-800: #1547ad;
+    --color-brand-900: #163f88;
+    --color-brand-950: #0f2757;
+
+    --color-accent-300: #9fdcf6;
+    --color-accent-400: #4bbfef;
+    --color-accent-500: #22a9e3;
+
+    --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+    --shadow-pop: 0 12px 32px -8px rgba(15, 63, 101, 0.18), 0 2px 6px rgba(16, 24, 40, 0.06);
+    --shadow-btn: 0 1px 2px rgba(13, 113, 185, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+[x-cloak] { display: none !important; }
+
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-size: 14px; }
+body { background: #f4f6fb; color: #0f172a; }
+
+@layer components {
+    .form-input {
+        @apply block h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] text-slate-900
+               placeholder:text-slate-400 transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20;
+    }
+    textarea.form-input { @apply h-auto py-2.5; }
+    .form-label { @apply mb-1 block text-[11px] font-medium text-slate-600; }
+
+    /* Butonlar: düz, gölgesiz, tek vurgu rengi */
+    .btn { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3.5 text-[13px] font-semibold leading-none transition-colors disabled:opacity-50; }
+    .btn-primary { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3.5 text-[13px] font-semibold leading-none text-white transition-colors disabled:opacity-50 bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-1; box-shadow: 0 6px 16px -6px rgba(30,111,242,.45); }
+    .btn-success { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3.5 text-[13px] font-semibold leading-none text-white transition-colors disabled:opacity-50 bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-1; box-shadow: 0 6px 16px -6px rgba(5,150,105,.4); }
+    .btn-secondary { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-[13px] font-semibold leading-none transition-colors disabled:opacity-50 border border-slate-200 bg-white text-slate-700 shadow-sm hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700; }
+    .btn-danger { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3.5 text-[13px] font-semibold leading-none text-white transition-colors disabled:opacity-50 bg-red-600 hover:bg-red-700; }
+    .btn-sm { @apply h-8 rounded-md px-2.5 text-xs; }
+    /* İkon butonu (satır işlemleri) */
+    .btn-icon { @apply inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900; }
+    .btn-icon-danger { @apply inline-flex h-7 w-7 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-700; }
+    .btn-icon-primary { @apply inline-flex h-7 w-7 items-center justify-center rounded-lg text-emerald-600 transition-colors hover:bg-emerald-50 hover:text-emerald-800; }
+
+    .card { @apply rounded-2xl border border-slate-200/80 bg-white; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -16px rgba(15,23,42,.12); }
+    .card h2 { @apply text-[13px] font-bold; }
+
+    /* Rozetler: nötr zemin + küçük renkli nokta */
+    .badge { @apply inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700; }
+    .badge-ok, .badge-warn, .badge-danger, .badge-info { @apply inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold; }
+    .badge-ok { @apply bg-emerald-50 text-emerald-700; }
+    .badge-warn { @apply bg-amber-50 text-amber-700; }
+    .badge-danger { @apply bg-red-50 text-red-600; }
+    .badge-info { @apply bg-violet-50 text-violet-700; }
+    .badge i { @apply text-slate-400; }
+
+    /* Filtre sekmeleri */
+    .chip { @apply inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold leading-none text-slate-600 shadow-sm transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700; }
+    .chip i { @apply text-slate-400; }
+    .chip:hover i { @apply text-brand-500; }
+    .chip-active { @apply border-brand-600 bg-brand-600 text-white hover:border-brand-700 hover:bg-brand-700 hover:text-white; box-shadow: 0 6px 16px -6px rgba(30,111,242,.45); }
+    .chip-active i, .chip-active:hover i { @apply text-white/80; }
+
+    .th { @apply px-3.5 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-500 border-b border-slate-200 bg-white; }
+    .td { @apply px-3.5 py-2.5 text-[13px] text-slate-700; }
+}
+
+/* Kart başlıklarındaki ikon: mavi kutu (katman dışı; Font Awesome'ın display kuralını ezer) */
+.card h2 > i:first-child, .card h3 > i:first-child {
+    display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
+    width: 1.75rem; height: 1.75rem; margin-right: .5rem; border-radius: .5rem; font-size: .72rem;
+    background: #eef4ff; color: #1e6ff2;
+}
+.card h2 > i:first-child.text-slate-400, .card h3 > i:first-child.text-slate-400 { color: #1e6ff2; }
+
+/* Sayfa başlığındaki aksiyon butonları: tablo butonlarından büyük */
+.page-actions .btn, .page-actions .btn-primary, .page-actions .btn-secondary, .page-actions .btn-success, .page-actions .btn-sm { height: 40px; padding-left: 1rem; padding-right: 1rem; font-size: 13.5px; border-radius: .6rem; }
+.page-actions .ts-wrapper.single .ts-control, .page-actions .form-input { min-height: 40px; height: 40px; font-size: 13.5px; border-radius: .6rem; }
+
+/* ---- Tom Select ---- */
+.ts-wrapper { @apply text-sm; }
+.ts-wrapper.single .ts-control,
+.ts-wrapper.multi .ts-control {
+    @apply min-h-[36px] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-medium text-slate-800 transition;
+    box-shadow: none;
+}
+.ts-wrapper.single .ts-control { background-image: none; padding-right: 2.25rem; }
+.ts-wrapper.single .ts-control:after {
+    content: ''; position: absolute; right: 0.9rem; top: 50%; width: 7px; height: 7px; margin-top: -5px; pointer-events: none;
+    border-right: 2px solid #64748b; border-bottom: 2px solid #64748b; transform: rotate(45deg); border-top: 0; border-left: 0;
+}
+.ts-wrapper.focus .ts-control { @apply border-brand-500 ring-2 ring-brand-500/20; }
+.ts-wrapper.single.input-active .ts-control { @apply bg-white; }
+.ts-control > input { @apply text-sm text-slate-900; }
+.ts-control > input::placeholder, .ts-wrapper .ts-control .placeholder { @apply text-slate-400; }
+.ts-dropdown { @apply mt-1 rounded-lg border border-slate-200 bg-white text-sm; box-shadow: 0 8px 24px -8px rgba(15,23,42,.15); z-index: 60; }
+.ts-dropdown .ts-dropdown-content { padding: 4px; }
+.ts-dropdown .option { @apply rounded-lg px-3 py-2 text-slate-700; }
+.ts-dropdown .option.active { @apply bg-brand-50 text-brand-800; }
+.ts-dropdown .option.selected { @apply font-semibold text-brand-700; }
+.ts-dropdown .option.selected:after { content: '\2713'; float: right; color: #0d71b9; }
+.ts-dropdown .no-results { @apply px-3 py-2 text-slate-500; }
+.ts-dropdown .create { @apply px-3 py-2 text-brand-700; }
+.ts-wrapper.multi .ts-control > div { @apply rounded-md bg-brand-50 px-2 py-0.5 text-brand-800 border border-brand-100; }
+.ts-wrapper.multi .ts-control > div .remove { border-left: 1px solid #b9dcf6; }
+.ts-wrapper.plugin-clear_button .clear-button { @apply text-slate-400; right: 0.7rem; }
+.ts-wrapper.plugin-clear_button.single.has-items .ts-control:after { display: none; } /* temizle butonu varken ok gizle (çift işaret olmasın) */
+.ts-dropdown.single, .ts-dropdown.multi { min-width: 12rem; }
+.ts-wrapper.disabled .ts-control { @apply bg-slate-50 opacity-70; }
+.ts-wrapper.w-auto .ts-control { min-width: 9rem; }
+
+/* Durum açılır menüsü: kompakt + renkli nokta */
+.status-select + .ts-wrapper { display: inline-block; vertical-align: middle; width: 8rem; }
+.status-select + .ts-wrapper .ts-control { @apply min-h-[34px] rounded-lg py-1.5 pl-6 text-xs font-semibold; }
+.status-select + .ts-wrapper .ts-control:before { content: ''; position: absolute; left: 0.6rem; top: 50%; margin-top: -3px; width: 6px; height: 6px; border-radius: 9999px; background: #94a3b8; }
+.status-select.status-paid + .ts-wrapper .ts-control:before { background: #10b981; }
+.status-select.status-pending + .ts-wrapper .ts-control:before { background: #ef4444; }
+.status-select.status-partial + .ts-wrapper .ts-control:before { background: #f59e0b; }
+
+/* ---- Flatpickr ---- */
+.flatpickr-calendar { @apply rounded-lg border border-slate-200; box-shadow: 0 8px 24px -8px rgba(15,23,42,.15); font-family: inherit; padding: 6px; }
+.flatpickr-months .flatpickr-month, .flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-weekdays, span.flatpickr-weekday { background: #fff; color: #0f172a; }
+.flatpickr-months { @apply border-b border-slate-100 pb-1; }
+.flatpickr-current-month { font-size: 0.95rem; font-weight: 600; }
+.flatpickr-current-month .flatpickr-monthDropdown-months { @apply rounded-md font-semibold hover:bg-brand-50; }
+.flatpickr-current-month input.cur-year { font-weight: 600; }
+span.flatpickr-weekday { @apply text-[11px] font-semibold uppercase text-slate-400; }
+.flatpickr-day { @apply rounded-lg text-slate-700 font-medium; border: 0; }
+.flatpickr-day:hover { @apply bg-brand-50 text-brand-800; }
+.flatpickr-day.today { @apply text-brand-700; box-shadow: inset 0 0 0 1.5px #7fc2ee; }
+.flatpickr-day.today:hover { @apply bg-brand-50; }
+.flatpickr-day.selected, .flatpickr-day.selected:hover { @apply text-white; background: #0d71b9; }
+.flatpickr-day.flatpickr-disabled, .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay { @apply text-slate-300 font-normal; }
+.flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month { @apply text-slate-500 rounded-lg; }
+.flatpickr-months .flatpickr-prev-month:hover, .flatpickr-months .flatpickr-next-month:hover { @apply bg-brand-50; }
+.flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill: #0d71b9; }
+.flatpickr-calendar.arrowTop:before, .flatpickr-calendar.arrowTop:after { border-bottom-color: #e2e8f0; }
+input.flatpickr-input[readonly] { @apply bg-white; }
+
+/* ---- İnce dokunuşlar ---- */
+button:not(:disabled), [type='submit']:not(:disabled), [role='button'], .btn, .btn-primary, .btn-success, .btn-secondary, .btn-danger,
+a[href], label[for], summary, .ts-control, .ts-dropdown .option, .flatpickr-day, .flatpickr-input, input[type='checkbox'], input[type='radio'] { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+.table-hover tbody tr { transition: background-color .12s ease; }
+.table-hover tbody tr:hover { background: #f8fafc; }
+::selection { background: #b9dcf6; }
+*::-webkit-scrollbar { height: 8px; width: 8px; }
+*::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+*::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Blade'de dinamik üretilen renk sınıfları */
+@source inline("{bg,text,border}-{brand,emerald,slate,red,amber,sky,rose,violet,orange}-{50,100,200,500,600,700,800}");
+@source inline("hover:bg-{brand,emerald,slate,red,amber,sky}-{50,100,700}");
+
+/* =====================================================================
+   Karanlık mod (.dark <html>) — yaygın yardımcı sınıfları katman dışında ezer
+   ===================================================================== */
+@custom-variant dark (&:where(.dark, .dark *));
+.dark body { background: #0b1220; color: #e2e8f0; }
+.dark .card { background: #111a2e; border-color: #1f2a44; box-shadow: none; }
+.dark .bg-white { background-color: #111a2e; }
+.dark .bg-white\/90 { background-color: rgba(17,26,46,.9); }
+.dark .bg-slate-50, .dark .bg-slate-50\/60, .dark .bg-slate-50\/80, .dark .bg-slate-100, .dark .bg-slate-50\/70 { background-color: #172238; }
+.dark .text-slate-900, .dark .text-slate-800 { color: #f1f5f9; }
+.dark .text-slate-700 { color: #cbd5e1; }
+.dark .text-slate-600 { color: #a3b1c6; }
+.dark .text-slate-500 { color: #8b9bb4; }
+.dark .text-slate-400, .dark .text-slate-300 { color: #64748b; }
+.dark .border-slate-200, .dark .border-slate-100, .dark .border-slate-200\/80, .dark .border-slate-200\/70, .dark .border-slate-300 { border-color: #1f2a44; }
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]), .dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: #1f2a44; }
+.dark .th { background: #111a2e; border-color: #1f2a44; color: #8b9bb4; }
+.dark .td { color: #cbd5e1; }
+.dark .table-hover tbody tr:hover, .dark .hover\:bg-slate-50:hover, .dark .hover\:bg-slate-50\/70:hover { background: #172238; }
+.dark tfoot.bg-slate-50, .dark thead tr.bg-slate-50 { background: #172238; }
+.dark .form-input, .dark .ts-wrapper.single .ts-control, .dark .ts-wrapper.multi .ts-control { background: #0f172a; border-color: #243149; color: #e2e8f0; }
+.dark .form-input::placeholder, .dark .ts-control > input::placeholder, .dark .ts-wrapper .ts-control .placeholder { color: #64748b; }
+.dark .ts-control > input { color: #e2e8f0; }
+.dark .ts-dropdown { background: #111a2e; border-color: #243149; }
+.dark .ts-dropdown .option { color: #cbd5e1; }
+.dark .ts-dropdown .option.active { background: #1e293b; color: #fff; }
+.dark .ts-wrapper.multi .ts-control > div { background: rgba(30,111,242,.2); color: #bdd3ff; border-color: rgba(30,111,242,.3); }
+.dark .btn-secondary, .dark .chip { background: #111a2e; border-color: #243149; color: #cbd5e1; box-shadow: none; }
+.dark .btn-icon { color: #94a3b8; }
+.dark .btn-secondary:hover, .dark .chip:hover { background: #172238; border-color: #2c3b5c; color: #fff; }
+.dark .btn-icon:hover { background: #172238; color: #fff; }
+.dark .btn-icon-danger { color: #f87171; } .dark .btn-icon-primary { color: #34d399; }
+.dark .chip-active, .dark .chip-active:hover { background: #1e6ff2; border-color: #1e6ff2; color: #fff; }
+.dark .badge { background: #1e293b; color: #cbd5e1; }
+.dark .badge-ok { background: rgba(16,185,129,.16); color: #6ee7b7; }
+.dark .badge-warn { background: rgba(245,158,11,.16); color: #fcd34d; }
+.dark .badge-danger { background: rgba(239,68,68,.16); color: #fca5a5; }
+.dark .badge-info { background: rgba(139,92,246,.18); color: #c4b5fd; }
+.dark .bg-brand-50, .dark .bg-brand-50\/40, .dark .bg-brand-50\/50 { background-color: rgba(30,111,242,.16); }
+.dark .bg-emerald-50 { background-color: rgba(16,185,129,.14); } .dark .bg-amber-50, .dark .bg-amber-50\/40 { background-color: rgba(245,158,11,.14); }
+.dark .bg-red-50 { background-color: rgba(239,68,68,.14); } .dark .bg-violet-50 { background-color: rgba(139,92,246,.16); }
+.dark .bg-sky-50 { background-color: rgba(14,165,233,.14); } .dark .bg-orange-50 { background-color: rgba(249,115,22,.14); }
+.dark .text-brand-600, .dark .text-brand-700 { color: #7aa5ff; }
+.dark .text-emerald-600, .dark .text-emerald-700 { color: #34d399; } .dark .text-amber-600, .dark .text-amber-700, .dark .text-amber-800 { color: #fbbf24; }
+.dark .text-red-600, .dark .text-red-500 { color: #f87171; } .dark .text-violet-600 { color: #a78bfa; } .dark .text-sky-600 { color: #38bdf8; }
+.dark .border-brand-200 { border-color: rgba(30,111,242,.35); } .dark .border-emerald-200 { border-color: rgba(16,185,129,.35); }
+.dark .border-amber-200 { border-color: rgba(245,158,11,.35); } .dark .border-red-200 { border-color: rgba(239,68,68,.35); }
+.dark .border-sky-200 { border-color: rgba(14,165,233,.35); } .dark .border-violet-200 { border-color: rgba(139,92,246,.35); }
+.dark .card h2 > i:first-child, .dark .card h3 > i:first-child { background: rgba(30,111,242,.18); color: #7aa5ff; }
+.dark .bg-slate-900\/40 { background-color: rgba(2,6,23,.7); }
+.dark .flatpickr-calendar, .dark .flatpickr-months .flatpickr-month, .dark .flatpickr-current-month .flatpickr-monthDropdown-months, .dark .flatpickr-weekdays, .dark span.flatpickr-weekday { background: #111a2e; color: #e2e8f0; border-color: #243149; }
+.dark .flatpickr-day { color: #cbd5e1; } .dark .flatpickr-day:hover { background: #1e293b; color: #fff; }
+.dark .flatpickr-day.flatpickr-disabled, .dark .flatpickr-day.prevMonthDay, .dark .flatpickr-day.nextMonthDay { color: #475569; }
+.dark .flatpickr-current-month input.cur-year { color: #e2e8f0; background: transparent; }
+.dark .border-2.border-slate-900 { border-color: #e2e8f0; color: #e2e8f0; }
+.dark .rounded-full.bg-slate-800 { background: #334155; }
+.dark *::-webkit-scrollbar-thumb { background: #334155; }
+.dark ::selection { background: rgba(30,111,242,.4); }
+.dark .bg-indigo-50 { background-color: rgba(99,102,241,.18); } .dark .text-indigo-600 { color: #a5b4fc; }
+
+/* Modallar: ekrana sığmazsa kendi içinde kaydırılır */
+div.fixed.inset-0.z-50 > form, div.fixed.inset-0.z-50 > div, div.fixed.inset-0.z-\[70\] > div { max-height: 90vh; overflow-y: auto; overscroll-behavior: contain; }
