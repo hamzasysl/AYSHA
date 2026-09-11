@@ -31,7 +31,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (! preg_match('#^https?://#', $appUrl)) $errors[] = 'Site adresi https:// ile başlamalı.';
     if ($dbName === '' || $dbUser === '') $errors[] = 'Veritabanı adı ve kullanıcısı zorunlu.';
-    if ($adminEmail === '' || strlen($adminPass) < 6) $errors[] = 'Yönetici e-postası ve en az 6 karakterli şifre zorunlu.';
+    $packPass = (string) ($_POST['pack_pass'] ?? '');
+    $packFile = $root.'/database/veri.enc';
+    $usePack = $packPass !== '' && is_file($packFile);
+    if (! $usePack && ($adminEmail === '' || strlen($adminPass) < 6)) $errors[] = 'Veri paketi kullanmıyorsanız yönetici e-postası ve en az 6 karakterli şifre zorunlu.';
 
     $pdo = null;
     if (! $errors) {
@@ -64,6 +67,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    if (! $errors && $usePack) {
+        // Şifreli veri paketi (database/veri.enc): yerel personel, bordro, ayar ve kullanıcılar
+        try {
+            $raw = file_get_contents($packFile);
+            if (substr($raw, 0, 5) !== 'TTBV1') throw new RuntimeException('Paket biçimi tanınmadı.');
+            $salt = substr($raw, 5, 16); $iv = substr($raw, 21, 16); $hmac = substr($raw, 37, 32); $cipher = substr($raw, 69);
+            $key = hash_pbkdf2('sha256', $packPass, $salt, 100000, 32, true);
+            if (! hash_equals(hash_hmac('sha256', $iv.$cipher, $key, true), $hmac)) throw new RuntimeException('Veri paketi şifresi yanlış.');
+            $sql = gzdecode(openssl_decrypt($cipher, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv));
+            if (! $sql) throw new RuntimeException('Paket açılamadı.');
+            $my = new mysqli($dbHost, $dbUser, $dbPass, $dbName);
+            $my->set_charset('utf8mb4');
+            if (! $my->multi_query($sql)) throw new RuntimeException($my->error);
+            do { if ($r = $my->store_result()) $r->free(); } while ($my->more_results() && $my->next_result());
+            if ($my->error) throw new RuntimeException($my->error);
+            $log[] = 'Veri paketi içe aktarıldı (personel, bordro, ayarlar, kullanıcılar).';
+        } catch (Throwable $e) {
+            $errors[] = 'Veri paketi: '.$e->getMessage();
+        }
+    }
+
     if (! $errors) {
         // İsteğe bağlı SQL yedeği (yerel verilerin taşınması)
         if (! empty($_FILES['sql']['tmp_name']) && is_uploaded_file($_FILES['sql']['tmp_name'])) {
@@ -92,11 +116,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
             $kernel->call('migrate', ['--force' => true]);
             $log[] = 'Veritabanı tabloları hazır. '.trim($kernel->output());
-            $user = App\Models\User::firstOrNew(['username' => $adminUser]);
-            $user->name = $adminName; $user->email = $adminEmail; $user->role = 'admin';
-            $user->password = Illuminate\Support\Facades\Hash::make($adminPass); $user->email_verified_at = now();
-            $user->save();
-            $log[] = "Yönetici hesabı hazır: {$adminUser}";
+            if ($adminEmail !== '' && strlen($adminPass) >= 6) {
+                $user = App\Models\User::firstOrNew(['username' => $adminUser]);
+                $user->name = $adminName; $user->email = $adminEmail; $user->role = 'admin';
+                $user->password = Illuminate\Support\Facades\Hash::make($adminPass); $user->email_verified_at = now();
+                $user->save();
+                $log[] = "Yönetici hesabı hazır: {$adminUser}";
+            } else {
+                $log[] = 'Yönetici: veri paketindeki kullanıcılar (ayse, batuhan) ve şifreleri aynen geçerli.';
+            }
             $kernel->call('config:clear'); $kernel->call('view:clear');
         } catch (Throwable $e) {
             $errors[] = 'Kurulum adımı başarısız: '.$e->getMessage();
@@ -105,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (! $errors) {
         @rename($self, $self.'.tamam');
-        layout('Kurulum tamamlandı', '<h1>Kurulum tamamlandı 🎉</h1><div class="ok">'.implode('<br>', array_map('h', $log)).'</div><p>Bu sayfa devre dışı bırakıldı (<code>kurulum.php.tamam</code>). Giriş için kullanıcı adı: <b>'.h($adminUser).'</b></p><p><a class="btn" style="display:inline-block;text-decoration:none" href="'.h($appUrl).'/giris">Giriş sayfasına git →</a></p>');
+        layout('Kurulum tamamlandı', '<h1>Kurulum tamamlandı 🎉</h1><div class="ok">'.implode('<br>', array_map('h', $log)).'</div><p>Bu sayfa devre dışı bırakıldı (<code>kurulum.php.tamam</code>).</p><p><a class="btn" style="display:inline-block;text-decoration:none" href="'.h($appUrl).'/giris">Giriş sayfasına git →</a></p>');
         exit;
     }
     if (is_file($envFile) && $errors) { @unlink($envFile); }
@@ -121,7 +149,9 @@ layout('TTB Turizm Kurulum', '<h1>TTB Turizm – Kurulum</h1><p>Bilgileri doldur
  <h2>Veritabanı (cPanel &gt; MySQL Veritabanları)</h2>
  <div class="row"><div><label>Sunucu</label><input name="db_host" value="'.$v('db_host', 'localhost').'"></div><div><label>Veritabanı adı</label><input name="db_name" value="'.$v('db_name').'" placeholder="kullanici_ttb"></div></div>
  <div class="row"><div><label>Kullanıcı</label><input name="db_user" value="'.$v('db_user').'" placeholder="kullanici_ttb"></div><div><label>Şifre</label><input name="db_pass" type="password"></div></div>
- <h2>Yönetici hesabı</h2>
+ <h2>Veri paketi (bilgisayarınızdaki tüm veriler)</h2>
+ <label>Veri paketi şifresi</label><input name="pack_pass" type="password" placeholder="Size verilen TTB-... şifresi"><small>'.(is_file($root.'/database/veri.enc') ? 'Paket hazır (personel, bordro, ayarlar, kullanıcılar). Şifreyi girerseniz sistem bu verilerle kurulur, aşağıdaki yönetici alanları boş bırakılabilir.' : 'Bu kurulumda veri paketi yok.').'</small>
+ <h2>Yönetici hesabı <small>(veri paketi kullanılıyorsa isteğe bağlı)</small></h2>
  <div class="row"><div><label>Ad Soyad</label><input name="admin_name" value="'.$v('admin_name', 'Ayşenur Miran').'"></div><div><label>Kullanıcı adı</label><input name="admin_user" value="'.$v('admin_user', 'ayse').'"></div></div>
  <div class="row"><div><label>E-posta</label><input name="admin_email" type="email" value="'.$v('admin_email').'"></div><div><label>Şifre</label><input name="admin_pass" type="password"></div></div>
  <h2>Veri taşıma (isteğe bağlı)</h2>

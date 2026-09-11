@@ -14,6 +14,7 @@ aylık bordro takibi (ödendi / kısmi / bekliyor), performans değerlendirmeler
 
 ## Dağıtım (cPanel, Git, terminal yok)
 - Bkz. `KURULUM.md`. `vendor/` ve `public/build/` REPOYA DAHİL (sunucuda composer/npm yok): kod değişince `npm run build` yap ve vendor değişiklikleriyle birlikte commit et. `composer.json` platform php 8.3.0 (sunucu PHP 8.3); 8.4 isteyen paket ekleme.
+- Gerçek veri sunucuya `database/veri.enc` ile taşınır (AES-256-CBC + PBKDF2 + HMAC, `php artisan aysha:veri-paketle --sifre=...`); şifre kullanıcıda, repoya/memory'ye yazma. Veri değişince yeniden paketle ve commit et.
 - `.cpanel.yml` deploy görevleri, `public/kurulum.php` tek seferlik tarayıcı kurulumu (.env yoksa çalışır, bitince `.tamam` olur). `.env` ve `*.sql` asla commit edilmez. Repo PUBLIC: gerçek veri (dump) repoya girmez.
 
 ## Komutlar
