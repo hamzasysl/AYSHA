@@ -12,6 +12,10 @@ aylık bordro takibi (ödendi / kısmi / bekliyor), performans değerlendirmeler
 - Saat dilimi `Europe/Istanbul` (`APP_TIMEZONE`); tarih/saatler DB'de Türkiye saatiyle tutulur.
 - Personelde yemek/yol alanı formda hep dolu görünür; girilen tutar geçerli varsayılana eşitse `null` saklanır (Ayarlar'ı takip eder), farklıysa özel değer olur.
 
+## Dağıtım (cPanel, Git, terminal yok)
+- Bkz. `KURULUM.md`. `vendor/` ve `public/build/` REPOYA DAHİL (sunucuda composer/npm yok): kod değişince `npm run build` yap ve vendor değişiklikleriyle birlikte commit et. `composer.json` platform php 8.3.0 (sunucu PHP 8.3); 8.4 isteyen paket ekleme.
+- `.cpanel.yml` deploy görevleri, `public/kurulum.php` tek seferlik tarayıcı kurulumu (.env yoksa çalışır, bitince `.tamam` olur). `.env` ve `*.sql` asla commit edilmez. Repo PUBLIC: gerçek veri (dump) repoya girmez.
+
 ## Komutlar
 ```bash
 composer install && npm install
