@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\LoginLog;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +40,7 @@ class LoginController extends Controller
 
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             RateLimiter::hit($key, 60);
+            LoginLog::record($request, User::where($field, mb_strtolower($login))->first(), $login, false);
 
             throw ValidationException::withMessages([
                 'login' => 'Kullanıcı adı / e-posta veya şifre hatalı.',
@@ -46,6 +49,7 @@ class LoginController extends Controller
 
         RateLimiter::clear($key);
         $request->session()->regenerate();
+        LoginLog::record($request, $request->user(), $login, true);
 
         return redirect()->intended(route('dashboard'));
     }

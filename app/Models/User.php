@@ -25,6 +25,11 @@ class User extends Authenticatable
         'viewer' => ['Çalışan', 'Sadece görüntüler; hiçbir şeyi ekleyemez, düzenleyemez, silemez'],
     ];
 
+    public function loginLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(LoginLog::class)->latest('created_at')->latest('id');
+    }
+
     public function isManager(): bool
     {
         return in_array($this->role, ['admin', 'owner'], true);

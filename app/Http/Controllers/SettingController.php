@@ -14,7 +14,7 @@ class SettingController extends Controller
     {
         $values = collect(Setting::DEFAULTS)->map(fn ($meta, $key) => Setting::get($key));
 
-        $users = \App\Models\User::orderBy('name')->get();
+        $users = \App\Models\User::with(['loginLogs' => fn ($q) => $q->limit(25)])->withCount(['loginLogs as successful_logins_count' => fn ($q) => $q->where('successful', true)])->orderBy('name')->get();
         $categories = \App\Models\ExpenseCategory::orderBy('sort')->orderBy('id')->get();
         $categoryUsage = \App\Models\Expense::selectRaw('category, COUNT(*) as c')->groupBy('category')->pluck('c', 'category');
 

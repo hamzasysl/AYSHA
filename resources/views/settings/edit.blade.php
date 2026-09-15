@@ -154,10 +154,10 @@
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full table-hover">
-                            <thead><tr><th class="th">Kullanıcı</th><th class="th">Kullanıcı adı</th><th class="th">E-posta</th><th class="th">Yetki</th><th class="th">Oluşturma</th><th class="th text-right">İşlem</th></tr></thead>
+                            <thead><tr><th class="th">Kullanıcı</th><th class="th">Kullanıcı adı</th><th class="th">E-posta</th><th class="th">Yetki</th><th class="th">Son giriş</th><th class="th text-right">İşlem</th></tr></thead>
                             <tbody class="divide-y divide-slate-100">
                             @foreach ($users as $u)
-                                <tr x-data="{ edit: false }">
+                                <tr x-data="{ edit: false, history: false }">
                                     <td class="td whitespace-nowrap">
                                         <div class="flex items-center gap-3">
                                             <span class="grid h-9 w-9 place-items-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700">{{ mb_strtoupper(mb_substr($u->name, 0, 1)) }}</span>
@@ -167,15 +167,58 @@
                                     <td class="td font-mono text-xs">{{ $u->username }}</td>
                                     <td class="td">{{ $u->email }}</td>
                                     <td class="td"><span class="{{ in_array($u->role, ['admin', 'owner']) ? 'badge-info' : ($u->role === 'editor' ? 'badge-ok' : 'badge') }}" title="{{ \App\Models\User::ROLES[$u->role][1] ?? '' }}">{{ $u->roleLabel() }}</span></td>
-                                    <td class="td text-xs text-slate-500">{{ $u->created_at->format('d.m.Y') }}</td>
+                                    @php $sonGiris = $u->loginLogs->firstWhere('successful', true); @endphp
+                                    <td class="td whitespace-nowrap text-xs text-slate-500">
+                                        @if ($sonGiris)
+                                            {{ $sonGiris->created_at->format('d.m.Y H:i') }}
+                                            <div class="text-[11px] text-slate-400"><i class="fa-solid {{ $sonGiris->device_icon }} mr-1"></i>{{ $sonGiris->device_label }}</div>
+                                        @else <span class="text-slate-300">hiç giriş yok</span> @endif
+                                    </td>
                                     <td class="td text-right whitespace-nowrap">
                                         <div class="inline-flex items-center gap-2">
+                                            <button type="button" @click="history = true" class="btn-icon" title="Oturum geçmişi"><i class="fa-solid fa-clock-rotate-left"></i></button>
                                             <button type="button" @click="edit = true" class="btn-icon" title="Düzenle / şifre ver"><i class="fa-solid fa-pen"></i></button>
                                             @if ($u->id !== auth()->id())
                                                 <x-confirm-form :action="route('users.destroy', $u)" title="Kullanıcıyı sil" :message="$u->name.' artık giriş yapamayacak.'" title="Sil"><i class="fa-solid fa-trash"></i></x-confirm-form>
                                             @endif
                                         </div>
                                         <template x-teleport="body">
+                                            <template x-if="history">
+                                            <div x-show="history" @click.self="history = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-[2px]">
+                                                <div class="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/5 text-left">
+                                                    <div class="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
+                                                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-100">{{ mb_strtoupper(mb_substr($u->name, 0, 1)) }}</span>
+                                                        <div class="min-w-0 flex-1">
+                                                            <div class="truncate text-[15px] font-medium leading-tight text-slate-900">{{ $u->name }}</div>
+                                                            <div class="mt-0.5 truncate text-xs text-slate-500">Oturum geçmişi · toplam {{ $u->successful_logins_count }} başarılı giriş</div>
+                                                        </div>
+                                                        <button type="button" @click="history = false" class="grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" title="Kapat"><i class="fa-solid fa-xmark"></i></button>
+                                                    </div>
+                                                    <div class="overflow-y-auto bg-slate-50/60 p-4">
+                                                        @if ($u->loginLogs->isEmpty())
+                                                            <div class="rounded-lg border border-dashed border-slate-200 bg-white p-6 text-center text-xs text-slate-400">Bu kullanıcı için henüz giriş kaydı yok.</div>
+                                                        @else
+                                                            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                                                <table class="min-w-full">
+                                                                    <thead><tr><th class="th">Tarih / saat</th><th class="th">Cihaz</th><th class="th">IP</th><th class="th">Durum</th></tr></thead>
+                                                                    <tbody class="divide-y divide-slate-100">
+                                                                    @foreach ($u->loginLogs as $log)
+                                                                        <tr>
+                                                                            <td class="td whitespace-nowrap">{{ $log->created_at->format('d.m.Y H:i') }}<div class="text-[11px] text-slate-400">{{ $log->created_at->diffForHumans() }}</div></td>
+                                                                            <td class="td whitespace-nowrap"><i class="fa-solid {{ $log->device_icon }} mr-1.5 text-slate-400"></i>{{ $log->device_label }}</td>
+                                                                            <td class="td whitespace-nowrap font-mono text-xs">{{ $log->ip ?: '—' }}</td>
+                                                                            <td class="td whitespace-nowrap">@if ($log->successful)<span class="badge-ok">Başarılı</span>@else<span class="badge-danger">Hatalı şifre</span>@endif</td>
+                                                                        </tr>
+                                                                    @endforeach
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                            <p class="mt-3 text-[11px] text-slate-500">Son {{ $u->loginLogs->count() }} kayıt gösteriliyor. Hatalı şifre denemeleri de listelenir.</p>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            </template>
                                             <template x-if="edit">
                                             <div x-show="edit" @click.self="edit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                                                 <form method="POST" action="{{ route('users.update', $u) }}" class="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl text-left" x-data="{ show: true }">
