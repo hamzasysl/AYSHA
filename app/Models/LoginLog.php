@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 /** Giriş denemeleri: kim, ne zaman, hangi IP ve cihazdan. */
 class LoginLog extends Model
@@ -24,8 +25,13 @@ class LoginLog extends Model
     }
 
     /** İstekten kayıt oluşturur. */
-    public static function record(Request $request, ?User $user, string $login, bool $successful): self
+    public static function record(Request $request, ?User $user, string $login, bool $successful): ?self
     {
+        // Tablo henüz oluşmadıysa giriş engellenmesin
+        if (! Schema::hasTable('login_logs')) {
+            return null;
+        }
+
         $agent = (string) $request->userAgent();
 
         return static::create([

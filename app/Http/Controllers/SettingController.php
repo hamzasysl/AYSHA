@@ -6,6 +6,7 @@ use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class SettingController extends Controller
@@ -14,7 +15,18 @@ class SettingController extends Controller
     {
         $values = collect(Setting::DEFAULTS)->map(fn ($meta, $key) => Setting::get($key));
 
-        $users = \App\Models\User::with(['loginLogs' => fn ($q) => $q->limit(25)])->withCount(['loginLogs as successful_logins_count' => fn ($q) => $q->where('successful', true)])->orderBy('name')->get();
+        // Giriş geçmişi tablosu henüz oluşmadıysa (deploy edilip migration çalıştırılmadıysa)
+        // sayfa patlamamalı — Sistem sekmesindeki güncelleme düğmesi bu sayfada.
+        $users = \App\Models\User::orderBy('name')->get();
+        if (Schema::hasTable('login_logs')) {
+            $users->load(['loginLogs' => fn ($q) => $q->limit(25)]);
+            $users->loadCount(['loginLogs as successful_logins_count' => fn ($q) => $q->where('successful', true)]);
+        } else {
+            $users->each(function ($u) {
+                $u->setRelation('loginLogs', collect());
+                $u->successful_logins_count = 0;
+            });
+        }
         $categories = \App\Models\ExpenseCategory::orderBy('sort')->orderBy('id')->get();
         $categoryUsage = \App\Models\Expense::selectRaw('category, COUNT(*) as c')->groupBy('category')->pluck('c', 'category');
 
@@ -25,7 +37,9 @@ class SettingController extends Controller
             'leave_type' => \App\Models\Leave::selectRaw('type as k, COUNT(*) as c')->groupBy('type')->pluck('c', 'k'),
         ];
 
-        return view('settings.edit', compact('values', 'users', 'categories', 'categoryUsage', 'lists', 'listUsage'));
+        $pendingMigrations = SystemController::status()['pending'];
+
+        return view('settings.edit', compact('values', 'users', 'categories', 'categoryUsage', 'lists', 'listUsage', 'pendingMigrations'));
     }
 
     public function update(Request $request): RedirectResponse

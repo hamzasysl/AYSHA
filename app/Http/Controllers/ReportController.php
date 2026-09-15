@@ -50,6 +50,7 @@ class ReportController extends Controller
                 'paid' => $paid,
                 'remaining' => max(0, $total - $paid),
                 'ratio' => $total > 0 ? (int) round($paid / $total * 100) : null,
+                'refund_pending' => (float) $p->sum(fn ($i) => $i->refund_pending) + (float) $x->sum(fn ($i) => $i->refund_pending),
                 'pending' => [
                     'salary' => $p->where('status', '!=', 'paid')->count(),
                     'meal' => $x->where('category', 'meal')->where('status', 'pending')->count(),
@@ -65,6 +66,7 @@ class ReportController extends Controller
             'meal' => $monthly->sum('meal'), 'travel' => $monthly->sum('travel'), 'extra' => $monthly->sum('extra'), 'general' => $monthly->sum('general'),
             'expense_deduction' => $monthly->sum('expense_deduction'),
             'total' => $monthly->sum('total'), 'paid' => $monthly->sum('paid'), 'remaining' => $monthly->sum('remaining'),
+            'refund_pending' => $monthly->sum('refund_pending'),
             'max_total' => max(1, $monthly->max('total')),
         ];
         $totals['ratio'] = $totals['total'] > 0 ? (int) round($totals['paid'] / $totals['total'] * 100) : null;
@@ -100,6 +102,7 @@ class ReportController extends Controller
                 'extra_detail' => $x->filter(fn ($i) => $isExtra($i->category))->groupBy('category')->map(fn ($g) => (float) $g->sum(fn ($i) => $i->net_amount)),
                 'other' => (float) $x->filter(fn ($i) => $isGeneral($i->category))->sum(fn ($i) => $i->net_amount),
                 'total' => $total, 'paid' => $paid, 'remaining' => max(0, $total - $paid),
+                'refund_pending' => (float) $p->sum(fn ($i) => $i->refund_pending) + (float) $x->sum(fn ($i) => $i->refund_pending),
                 'pending_count' => $p->where('status', '!=', 'paid')->count() + $x->where('status', 'pending')->count(),
                 'avg_score' => $r->isNotEmpty() ? round($r->avg('score'), 1) : null, 'reviews' => $r->count(),
             ];

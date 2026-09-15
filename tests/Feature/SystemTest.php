@@ -35,4 +35,16 @@ class SystemTest extends TestCase
             $this->actingAs($u)->get('/ayarlar')->assertOk()->assertDontSee('Güncelleme sonrası');
         }
     }
+
+    public function test_settings_page_works_before_login_log_migration_runs(): void
+    {
+        // Sunucuya yeni sürüm yüklenip migration çalıştırılmadığında ayarlar sayfası
+        // (yani güncelleme düğmesinin bulunduğu sayfa) açılabilmeli.
+        \Illuminate\Support\Facades\Schema::drop('login_logs');
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->get('/ayarlar')->assertOk()->assertSee('Kullanıcılar');
+        $this->post('/cikis');
+        $this->post('/giris', ['login' => $admin->email, 'password' => 'password'])->assertRedirect();
+    }
 }

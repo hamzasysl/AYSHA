@@ -38,6 +38,12 @@ class SystemController extends Controller
         ];
     }
 
+    /** Ayarlar sayfası açılmasa bile bakım işlerine ulaşılabilen sade sayfa. */
+    public function index()
+    {
+        return view('system.index');
+    }
+
     /** Veritabanı güncellemelerini uygular ve önbelleği temizler. */
     public function migrate(): RedirectResponse
     {

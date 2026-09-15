@@ -89,6 +89,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/ayarlar/listeler/{type}', [ListItemController::class, 'store'])->name('lists.store')->whereIn('type', ['position', 'bank', 'leave_type']);
         Route::put('/ayarlar/listeler/{item}', [ListItemController::class, 'update'])->name('lists.update');
         Route::delete('/ayarlar/listeler/{item}', [ListItemController::class, 'destroy'])->name('lists.destroy');
+        Route::get('/ayarlar/sistem', [SystemController::class, 'index'])->name('system.index');
         Route::post('/ayarlar/sistem/guncelle', [SystemController::class, 'migrate'])->name('system.migrate');
         Route::post('/ayarlar/sistem/onbellek', [SystemController::class, 'clearCache'])->name('system.cache');
     });

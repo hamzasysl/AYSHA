@@ -236,4 +236,19 @@ class ExpenseTest extends TestCase
         $this->assertSame('pending', $x->fresh()->status);
         $this->assertNull($x->fresh()->paid_amount);
     }
+
+    public function test_reports_show_pending_refunds(): void
+    {
+        $e = Employee::factory()->create(['first_name' => 'Nalan', 'last_name' => 'Demir']);
+        Expense::factory()->create([
+            'employee_id' => $e->id, 'category' => 'travel', 'amount' => 3628, 'expense_date' => '2026-09-01',
+            'status' => 'paid', 'paid_amount' => 3650,
+        ]);
+
+        $r = $this->actingAs($this->user)->get('/raporlar?year=2026')->assertOk();
+        $r->assertSee('İade Bekleyen (Para Üstü)', false)->assertSee('22,00 ₺ iade', false);
+
+        $this->actingAs($this->user)->get('/raporlar?year=2026&tab=employees')->assertOk()
+            ->assertSee('22,00 ₺ iade bekliyor', false);
+    }
 }

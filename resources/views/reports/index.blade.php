@@ -24,7 +24,7 @@
         {{-- Genel özet --}}
         <div x-show="tab === 'overview'" x-cloak class="space-y-6">
     {{-- Yıl özeti --}}
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <div class="card p-5">
             <div class="text-xs font-medium text-slate-500">{{ $year }} Toplam Maliyet</div>
             <div class="mt-2 text-xl font-semibold tracking-tight text-slate-900">{{ $n2($totals['total']) }} ₺</div>
@@ -45,6 +45,11 @@
             @php $ded = $totals['salary_deduction'] + $totals['expense_deduction']; @endphp
             <div class="mt-2 text-xl font-semibold tracking-tight {{ $ded > 0 ? 'text-red-600' : 'text-slate-900' }}">{{ $ded > 0 ? '−' : '' }}{{ $n2($ded) }} ₺</div>
             <div class="mt-1 text-xs text-slate-500">Maaş avans/kesinti {{ $n0($totals['salary_deduction']) }} · yemek/yol kesintisi {{ $n0($totals['expense_deduction']) }} ₺</div>
+        </div>
+        <div class="card p-5">
+            <div class="text-xs font-medium text-slate-500">İade Bekleyen (Para Üstü)</div>
+            <div class="mt-2 text-xl font-semibold tracking-tight {{ $totals['refund_pending'] > 0 ? 'text-violet-600' : 'text-slate-900' }}">{{ $n2($totals['refund_pending']) }} ₺</div>
+            <div class="mt-1 text-xs text-slate-500">{{ $totals['refund_pending'] > 0 ? 'Elden fazla verilen, personelden geri alınacak' : 'Geri alınacak para üstü yok' }}</div>
         </div>
     </div>
 
@@ -104,6 +109,7 @@
                             @elseif ($pend->isNotEmpty())
                                 <div class="flex flex-wrap gap-1 whitespace-nowrap">@foreach ($pend as $k => $c)<span class="badge-warn" title="{{ $c }} {{ $labels[$k] }} kaydı ödenmedi">{{ $c }} {{ $labels[$k] }}</span>@endforeach</div>
                             @endif
+                            @if ($m['refund_pending'] > 0)<div class="mt-1 whitespace-nowrap"><span class="badge-info" title="Elden fazla verilen, personelden geri alınacak tutar"><i class="fa-solid fa-rotate-left mr-1"></i>{{ $n2($m['refund_pending']) }} ₺ iade</span></div>@endif
                         </td>
                         <td class="td text-right whitespace-nowrap">@if ($m['has'])<a href="{{ route('expenses.index', ['year' => $year, 'month' => $m['month']]) }}" class="text-xs font-medium text-brand-600 hover:underline">Muhasebe →</a>@endif</td>
                     </tr>
@@ -119,7 +125,7 @@
                     <td class="px-4 py-3 text-right tabular-nums {{ ($totals['salary_deduction'] + $totals['expense_deduction']) > 0 ? 'text-red-600' : 'text-slate-400' }}">{{ ($totals['salary_deduction'] + $totals['expense_deduction']) > 0 ? '−'.$n2($totals['salary_deduction'] + $totals['expense_deduction']) : '—' }}</td>
                     <td class="px-4 py-3 text-right tabular-nums">{{ $n2($totals['total']) }}</td>
                     <td class="px-4 py-3 text-right tabular-nums text-emerald-600">{{ $n2($totals['paid']) }}<div class="text-[11px] font-normal text-slate-500">%{{ $totals['ratio'] ?? 0 }}</div></td>
-                    <td class="px-4 py-3 text-xs font-normal text-slate-500" colspan="2">Kalan <b class="text-amber-600">{{ $n2($totals['remaining']) }} ₺</b></td>
+                    <td class="px-4 py-3 text-xs font-normal text-slate-500" colspan="2">Kalan <b class="text-amber-600">{{ $n2($totals['remaining']) }} ₺</b>@if ($totals['refund_pending'] > 0)<div class="mt-0.5">İade bekleyen <b class="text-violet-600">{{ $n2($totals['refund_pending']) }} ₺</b></div>@endif</td>
                 </tr></tfoot>
             </table>
         </div>
@@ -147,7 +153,8 @@
                             <td class="td text-right tabular-nums">{{ $r['other'] > 0 ? $n2($r['other']) : '—' }}</td>
                             <td class="td text-right tabular-nums text-red-600">{{ $r['deduction'] > 0 ? '−'.$n2($r['deduction']) : '—' }}</td>
                             <td class="td text-right font-semibold tabular-nums text-slate-900">{{ $n2($r['total']) }}</td>
-                            <td class="td text-right tabular-nums whitespace-nowrap {{ $r['remaining'] > 0 ? 'text-amber-600' : 'text-emerald-600' }}">{{ $n2($r['paid']) }}@if ($r['pending_count'])<div class="text-[11px]">{{ $r['pending_count'] }} bekleyen · kalan {{ $n0($r['remaining']) }}</div>@endif</td>
+                            <td class="td text-right tabular-nums whitespace-nowrap {{ $r['remaining'] > 0 ? 'text-amber-600' : 'text-emerald-600' }}">{{ $n2($r['paid']) }}@if ($r['pending_count'])<div class="text-[11px]">{{ $r['pending_count'] }} bekleyen · kalan {{ $n0($r['remaining']) }}</div>@endif
+                                @if ($r['refund_pending'] > 0)<div class="text-[11px] text-violet-600" title="Elden fazla verilen, geri alınacak">{{ $n2($r['refund_pending']) }} ₺ iade bekliyor</div>@endif</td>
                             <td class="td text-center"><x-score-badge :score="$r['avg_score']" /></td>
                         </tr>
                     @empty
