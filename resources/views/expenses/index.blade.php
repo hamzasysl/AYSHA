@@ -116,8 +116,8 @@
         <form method="GET" class="flex items-center gap-2">
             <input type="hidden" name="year" value="{{ $year }}"><input type="hidden" name="month" value="{{ $month }}">
             @if ($category)<input type="hidden" name="category" value="{{ $category }}">@endif
-            <x-ui-select name="employee_id" :submit="true" :clear="true" width="auto" class="w-56" placeholder="Personele göre filtrele">
-                <option value="">Personele göre filtrele</option>
+            <x-ui-select name="employee_id" :submit="true" :clear="true" width="auto" class="w-56" placeholder="Personele göre">
+                <option value="">Personele göre</option>
                 @foreach ($employees as $e)<option value="{{ $e->id }}" @selected($employeeId === $e->id)>{{ $e->full_name }}</option>@endforeach
             </x-ui-select>
         </form>
@@ -132,7 +132,7 @@
         <div class="card overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full table-hover">
-                    <thead><tr><th class="th">Personel</th><th class="th">Tarih</th><th class="th">Kategori</th><th class="th">Açıklama</th><th class="th text-right">Tutar</th><th class="th">Durum</th><th class="th text-right">İşlem</th></tr></thead>
+                    <thead><tr><th class="th">Personel</th><th class="th">Tarih</th><th class="th">Kategori</th><th class="th">Açıklama</th><th class="th text-right">Tutar</th><th class="th">Durum</th><th class="th">Ödeme</th><th class="th text-right">İşlem</th></tr></thead>
                     <tbody class="divide-y divide-slate-100">
                     @forelse ($expenses as $x)
                         @php $meta = $cats[$x->category]; @endphp
@@ -165,7 +165,10 @@
                                     </x-ui-select>
                                 </form>
                                 @else<x-status-badge :status="$x->status" />@endcan
-                                @if ($x->paid_at)<div class="mt-0.5 text-[11px] text-slate-500">{{ $x->paid_at->format('d.m.Y') }} · {{ $x->method_label }}</div>@endif
+                            </td>
+                            <td class="td whitespace-nowrap text-xs text-slate-500">
+                                @if ($x->paid_at){{ $x->paid_at->format('d.m.Y') }}@if ($x->method_label) · {{ $x->method_label }}@endif
+                                @else <span class="text-slate-300">—</span> @endif
                             </td>
                             <td class="td text-right whitespace-nowrap">
                                 <div class="inline-flex items-center gap-2">
@@ -228,14 +231,14 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="px-5 py-12 text-center text-sm text-slate-500">{{ $label }} için bu filtrede kayıt yok. Sağ üstten <b>Yeni Kayıt</b> veya <b>Toplu Kayıt</b> ekleyin.</td></tr>
+                        <tr><td colspan="8" class="px-5 py-12 text-center text-sm text-slate-500">{{ $label }} için bu filtrede kayıt yok. Sağ üstten <b>Yeni Kayıt</b> veya <b>Toplu Kayıt</b> ekleyin.</td></tr>
                     @endforelse
                     </tbody>
                     @if ($expenses->isNotEmpty())
                     <tfoot class="bg-slate-50 text-sm font-semibold"><tr>
                         <td class="px-4 py-3" colspan="4">Toplam ({{ $expenses->count() }} kayıt)</td>
                         <td class="px-4 py-3 text-right">@money($expenses->sum(fn ($x) => $x->net_amount))</td>
-                        <td class="px-4 py-3 text-xs font-normal text-slate-500" colspan="2">Ödenen @money($expenses->where('status', 'paid')->sum(fn ($x) => $x->net_amount)) · Bekleyen @money($expenses->where('status', 'pending')->sum(fn ($x) => $x->net_amount))@if ($expenses->sum('deduction') > 0) · Kesinti @money($expenses->sum('deduction'))@endif</td>
+                        <td class="px-4 py-3 text-xs font-normal text-slate-500" colspan="3">Ödenen @money($expenses->where('status', 'paid')->sum(fn ($x) => $x->net_amount)) · Bekleyen @money($expenses->where('status', 'pending')->sum(fn ($x) => $x->net_amount))@if ($expenses->sum('deduction') > 0) · Kesinti @money($expenses->sum('deduction'))@endif</td>
                     </tr></tfoot>
                     @endif
                 </table>

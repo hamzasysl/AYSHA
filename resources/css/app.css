@@ -77,8 +77,8 @@ body { background: #f4f6fb; color: #0f172a; }
     .chip-active { @apply border-brand-600 bg-brand-600 text-white hover:border-brand-700 hover:bg-brand-700 hover:text-white; box-shadow: 0 6px 16px -6px rgba(30,111,242,.45); }
     .chip-active i, .chip-active:hover i { @apply text-white/80; }
 
-    .th { @apply px-3.5 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-500 border-b border-slate-200 bg-white; }
-    .td { @apply px-3.5 py-2.5 text-[13px] text-slate-700; }
+    .th { @apply px-3.5 py-2.5 text-left align-middle text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-500 border-b border-slate-200 bg-white; }
+    .td { @apply px-3.5 py-2.5 align-middle text-[13px] text-slate-700; }
 }
 
 /* Kart başlıklarındaki ikon: mavi kutu (katman dışı; Font Awesome'ın display kuralını ezer) */
@@ -91,7 +91,11 @@ body { background: #f4f6fb; color: #0f172a; }
 
 /* Sayfa başlığındaki aksiyon butonları: tablo butonlarından büyük */
 .page-actions .btn, .page-actions .btn-primary, .page-actions .btn-secondary, .page-actions .btn-success, .page-actions .btn-sm { height: 40px; padding-left: 1rem; padding-right: 1rem; font-size: 13.5px; border-radius: .6rem; }
-.page-actions .ts-wrapper.single .ts-control, .page-actions .form-input { min-height: 40px; height: 40px; font-size: 13.5px; border-radius: .6rem; }
+.page-actions { align-items: center; }
+.page-actions .ts-wrapper.single .ts-control, .page-actions .form-input {
+    min-height: 40px; height: 40px; padding-top: 0; padding-bottom: 0; font-size: 13.5px; border-radius: .6rem;
+}
+.page-actions .btn-danger { height: 40px; padding-left: 1rem; padding-right: 1rem; font-size: 13.5px; border-radius: .6rem; }
 
 /* ---- Tom Select ---- */
 .ts-wrapper { @apply text-sm; }
@@ -127,11 +131,17 @@ body { background: #f4f6fb; color: #0f172a; }
 
 /* Durum açılır menüsü: kompakt + renkli nokta */
 .status-select + .ts-wrapper { display: inline-block; vertical-align: middle; width: 8rem; }
-.status-select + .ts-wrapper .ts-control { @apply min-h-[34px] rounded-lg py-1.5 pl-6 text-xs font-semibold; }
+.status-select + .ts-wrapper .ts-control { @apply rounded-lg pl-6 text-xs font-semibold; height: 34px; min-height: 34px; padding-top: 0; padding-bottom: 0; display: flex; align-items: center; }
 .status-select + .ts-wrapper .ts-control:before { content: ''; position: absolute; left: 0.6rem; top: 50%; margin-top: -3px; width: 6px; height: 6px; border-radius: 9999px; background: #94a3b8; }
 .status-select.status-paid + .ts-wrapper .ts-control:before { background: #10b981; }
 .status-select.status-pending + .ts-wrapper .ts-control:before { background: #ef4444; }
 .status-select.status-partial + .ts-wrapper .ts-control:before { background: #f59e0b; }
+
+/* Tekli seçiciler: içerik dikeyde ortalı (chip ve butonlarla aynı hizada dursun) */
+.ts-wrapper.single .ts-control { display: flex; align-items: center; height: 2.25rem; min-height: 2.25rem; padding-top: 0; padding-bottom: 0; }
+.ts-wrapper.single .ts-control > .item, .ts-wrapper.single .ts-control > input, .ts-wrapper.single .ts-control .placeholder {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
 
 /* ---- Flatpickr ---- */
 .flatpickr-calendar { @apply rounded-lg border border-slate-200; box-shadow: 0 8px 24px -8px rgba(15,23,42,.15); font-family: inherit; padding: 6px; }
