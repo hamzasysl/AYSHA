@@ -24,6 +24,15 @@ class Employee extends Model
         return ListItem::labels('position');
     }
 
+    protected static function booted(): void
+    {
+        // Kalıcı silmede notlar ve değerlendirmeler de gitsin (sahipsiz kayıt panoda 404 veriyor).
+        static::forceDeleted(function (Employee $e) {
+            $e->deleteNotes();
+            $e->performanceReviews()->delete();
+        });
+    }
+
     protected $fillable = [
         'first_name', 'last_name', 'tc_no', 'phone', 'email', 'position',
         'hire_date', 'termination_date', 'birth_date', 'status', 'salary',

@@ -9,6 +9,7 @@ use App\Models\SalaryPayment;
 use App\Support\PayrollPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ExpenseController extends Controller
 {
@@ -192,7 +193,7 @@ class ExpenseController extends Controller
 
         if ($data['status'] === 'paid') {
             $expense->status = 'paid';
-            $expense->payment_method = $expense->payment_method ?? 'transfer';
+            $expense->payment_method = $expense->payment_method ?? Expense::defaultMethod($expense->category);
             $expense->paid_at = $expense->paid_at ?? now()->toDateString();
         } else {
             $expense->status = 'pending';
@@ -204,10 +205,10 @@ class ExpenseController extends Controller
 
     public function markPaid(Request $request, Expense $expense): RedirectResponse
     {
-        $data = $request->validate(['payment_method' => ['nullable', 'in:transfer,cash']]);
+        $data = $request->validate(['payment_method' => ['nullable', Rule::in(array_keys(Expense::METHODS))]]);
 
         $expense->status = 'paid';
-        $expense->payment_method = $data['payment_method'] ?? $expense->payment_method ?? 'transfer';
+        $expense->payment_method = $data['payment_method'] ?? $expense->payment_method ?? Expense::defaultMethod($expense->category);
         $expense->paid_at = now()->toDateString();
         $expense->save();
 

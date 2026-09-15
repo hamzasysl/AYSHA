@@ -83,7 +83,7 @@
                             <div><label class="form-label">Durum *</label>
                                 <x-ui-select name="status" :search="false"><option value="pending" @selected(old('status') === 'pending')>Bekliyor</option><option value="paid" @selected(old('status') === 'paid')>Ödendi</option></x-ui-select></div>
                             <div><label class="form-label">Ödeme yöntemi</label>
-                                <x-ui-select name="payment_method" :search="false" placeholder="—"><option value="">—</option>@foreach (\App\Models\SalaryPayment::METHODS as $k => $l)<option value="{{ $k }}" @selected(old('payment_method') === $k)>{{ $l }}</option>@endforeach</x-ui-select></div>
+                                <x-ui-select name="payment_method" :search="false" placeholder="Kategoriye göre"><option value="">Kategoriye göre</option>@foreach (\App\Models\Expense::METHODS as $k => $l)<option value="{{ $k }}" @selected(old('payment_method') === $k)>{{ $l }}</option>@endforeach</x-ui-select></div>
                             <div><label class="form-label">Ödeme tarihi</label><x-date-input name="paid_at" :value="old('paid_at')" /></div>
                             <div class="col-span-2"><label class="form-label">Fiilen ödenen (₺) <span class="font-normal normal-case text-slate-400">— elden fazla verdiyseniz; fark "iade bekleniyor" olur</span></label><input name="paid_amount" value="{{ old('paid_amount') }}" placeholder="Boşsa tutara eşit" class="form-input text-right"></div>
                             <div class="col-span-2"><label class="form-label">İlk not</label><textarea name="note" rows="2" class="form-input" placeholder="İsteğe bağlı; tarih/saat ile kaydedilir">{{ old('note') }}</textarea></div>
@@ -212,7 +212,7 @@
                                                 <div><label class="form-label">Durum *</label>
                                                     <x-ui-select name="status" :search="false"><option value="pending" @selected($x->status === 'pending')>Bekliyor</option><option value="paid" @selected($x->status === 'paid')>Ödendi</option></x-ui-select></div>
                                                 <div><label class="form-label">Ödeme yöntemi</label>
-                                                    <x-ui-select name="payment_method" :search="false" placeholder="—"><option value="">—</option>@foreach (\App\Models\SalaryPayment::METHODS as $k => $l)<option value="{{ $k }}" @selected($x->payment_method === $k)>{{ $l }}</option>@endforeach</x-ui-select></div>
+                                                    <x-ui-select name="payment_method" :search="false" placeholder="Kategoriye göre"><option value="">Kategoriye göre</option>@foreach (\App\Models\Expense::METHODS as $k => $l)<option value="{{ $k }}" @selected($x->payment_method === $k)>{{ $l }}</option>@endforeach</x-ui-select></div>
                                                 <div><label class="form-label">Ödeme tarihi</label><x-date-input name="paid_at" :value="$x->paid_at" /></div>
                                                 <div class="col-span-2"><label class="form-label">Fiilen ödenen (₺) <span class="font-normal normal-case text-slate-400">— elden fazla verdiyseniz buraya yazın</span></label><input name="paid_amount" x-model="paid" placeholder="Boşsa tutara eşit" class="form-input text-right"></div>
                                             </div>

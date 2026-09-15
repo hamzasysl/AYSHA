@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Models\Expense;
-use App\Models\SalaryPayment;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -40,7 +39,7 @@ class ExpenseRequest extends FormRequest
             'deduction' => ['nullable', 'numeric', 'min:0', 'lte:amount'],
             'deduction_note' => ['nullable', 'string', 'max:255'],
             'status' => ['required', Rule::in(array_keys(Expense::STATUSES))],
-            'payment_method' => ['nullable', Rule::in(array_keys(SalaryPayment::METHODS))],
+            'payment_method' => ['nullable', Rule::in(array_keys(Expense::METHODS))],
             'paid_at' => ['nullable', 'date'],
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
             'refund_amount' => ['nullable', 'numeric', 'min:0'],

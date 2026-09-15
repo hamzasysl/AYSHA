@@ -104,6 +104,7 @@
                         [$label, $url] = match (true) {
                             $target instanceof \App\Models\Employee => [$target->full_name, route('employees.show', ['employee' => $target, 'tab' => 'notes'])],
                             $target instanceof \App\Models\Expense => [$target->category_label.($target->employee ? ' · '.$target->employee->full_name : ''), route('expenses.index', ['year' => $target->expense_date->year, 'month' => $target->expense_date->month])],
+                            $target instanceof \App\Models\Leave => [$target->type_label.($target->employee ? ' · '.$target->employee->full_name : ''), route('leaves.index', ['year' => $target->leave_year])],
                             default => ['—', '#'],
                         };
                     @endphp

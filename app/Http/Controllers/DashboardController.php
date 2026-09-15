@@ -34,8 +34,10 @@ class DashboardController extends Controller
 
         $pendingPayments = $payments->where('status', '!=', 'paid')->sortBy(fn ($p) => $p->employee->last_name)->take(8);
 
-        $recentReviews = PerformanceReview::with('employee')->latest('review_date')->latest('id')->take(5)->get();
-        $recentNotes = Note::with(['notable', 'author'])->latest()->take(6)->get();
+        // Silinmiş personele/kayda bağlı satırları gösterme (linki 404 veriyordu)
+        $recentReviews = PerformanceReview::whereHas('employee', fn ($q) => $q->withoutTrashed())->with('employee')->latest('review_date')->latest('id')->take(5)->get();
+        $recentNotes = Note::with(['notable', 'author'])->latest()->latest('id')->take(30)->get()
+            ->filter(fn (Note $n) => $n->notable !== null)->take(6)->values();
 
         // Son 6 ayın ödeme özeti (rapor mini grafiği)
         $trend = collect(range(5, 0))->map(function (int $back) {

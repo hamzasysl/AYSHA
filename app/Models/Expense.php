@@ -21,6 +21,16 @@ class Expense extends Model
 
     public const STATUSES = ['pending' => 'Bekliyor', 'paid' => 'Ödendi'];
 
+    public const METHODS = ['transfer' => 'Havale / EFT', 'cash' => 'Nakit', 'meal_card' => 'Yemek Kartı'];
+
+    /** Kategoriye göre varsayılan ödeme yöntemi: yol elden nakit, yemek yemek kartına yüklenir, kalanı EFT. */
+    public const DEFAULT_METHODS = ['travel' => 'cash', 'meal' => 'meal_card'];
+
+    public static function defaultMethod(?string $category): string
+    {
+        return self::DEFAULT_METHODS[$category] ?? 'transfer';
+    }
+
     protected $fillable = [
         'employee_id', 'category', 'expense_date', 'description', 'amount', 'deduction', 'deduction_note',
         'status', 'payment_method', 'paid_at', 'paid_amount', 'refund_amount', 'refund_at',
@@ -50,8 +60,14 @@ class Expense extends Model
             if ($e->status === 'pending') {
                 $e->paid_at = null;
                 $e->paid_amount = null;
-            } elseif ($e->paid_amount === null || (float) $e->paid_amount <= 0) {
-                $e->paid_amount = $e->net_amount;
+                $e->payment_method = null;
+            } else {
+                if ($e->paid_amount === null || (float) $e->paid_amount <= 0) {
+                    $e->paid_amount = $e->net_amount;
+                }
+                if (! $e->payment_method) {
+                    $e->payment_method = self::defaultMethod($e->category);
+                }
             }
 
             $over = max(0, round((float) ($e->paid_amount ?? 0) - $e->net_amount, 2));
@@ -63,6 +79,8 @@ class Expense extends Model
                 $e->refund_at = now()->toDateString();
             }
         });
+
+        static::deleting(fn (Expense $e) => $e->deleteNotes());
     }
 
     public function employee(): BelongsTo
@@ -105,6 +123,6 @@ class Expense extends Model
 
     public function getMethodLabelAttribute(): ?string
     {
-        return $this->payment_method ? (SalaryPayment::METHODS[$this->payment_method] ?? null) : null;
+        return $this->payment_method ? (self::METHODS[$this->payment_method] ?? null) : null;
     }
 }

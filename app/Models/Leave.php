@@ -37,6 +37,11 @@ class Leave extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::deleting(fn (Leave $l) => $l->deleteNotes());
+    }
+
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class)->withTrashed();

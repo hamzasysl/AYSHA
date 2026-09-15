@@ -163,4 +163,46 @@ class ExpenseTest extends TestCase
 
         $this->actingAs($this->user)->get("/personel/{$e->id}?tab=expenses")->assertOk()->assertSee('Yol parası Eylül')->assertSee('1.750,00 ₺');
     }
+
+    public function test_payment_method_defaults_per_category(): void
+    {
+        $e = Employee::factory()->create();
+        $travel = Expense::factory()->create(['employee_id' => $e->id, 'category' => 'travel', 'amount' => 3628, 'status' => 'pending']);
+        $meal = Expense::factory()->create(['employee_id' => $e->id, 'category' => 'meal', 'amount' => 7800, 'status' => 'pending']);
+        $other = Expense::factory()->create(['employee_id' => null, 'category' => 'cleaning', 'amount' => 900, 'status' => 'pending']);
+
+        foreach ([$travel, $meal, $other] as $x) {
+            $this->actingAs($this->user)->post("/muhasebe/{$x->id}/durum", ['status' => 'paid'])->assertRedirect();
+        }
+
+        $this->assertSame('cash', $travel->fresh()->payment_method);
+        $this->assertSame('meal_card', $meal->fresh()->payment_method);
+        $this->assertSame('transfer', $other->fresh()->payment_method);
+
+        // Bekliyora dönünce yöntem temizlenir
+        $this->actingAs($this->user)->post("/muhasebe/{$travel->id}/durum", ['status' => 'pending'])->assertRedirect();
+        $this->assertNull($travel->fresh()->payment_method);
+    }
+
+    public function test_deleting_expense_removes_its_notes(): void
+    {
+        $x = Expense::factory()->create(['category' => 'cleaning', 'employee_id' => null]);
+        $this->actingAs($this->user)->post("/notlar/expenses/{$x->id}", ['content' => 'Fiş kayıp'])->assertRedirect();
+        $this->assertSame(1, \App\Models\Note::count());
+
+        $this->actingAs($this->user)->delete("/muhasebe/{$x->id}")->assertRedirect();
+        $this->assertSame(0, \App\Models\Note::count());
+    }
+
+    public function test_dashboard_skips_notes_and_reviews_of_deleted_employees(): void
+    {
+        $e = Employee::factory()->create(['first_name' => 'Kayıp', 'last_name' => 'Personel']);
+        $this->actingAs($this->user)->post("/notlar/employees/{$e->id}", ['content' => 'Silinecek personelin notu'])->assertRedirect();
+        \App\Models\PerformanceReview::factory()->create(['employee_id' => $e->id]);
+        $e->delete();
+
+        $this->actingAs($this->user)->get('/genel-bakis')->assertOk()
+            ->assertDontSee('Silinecek personelin notu')
+            ->assertDontSee('Kayıp Personel');
+    }
 }
