@@ -136,7 +136,7 @@
                             <button type="button" @click="open = true" class="btn-primary"><i class="fa-solid fa-user-plus"></i> Yeni Kullanıcı</button>
                             <template x-teleport="body">
                                 <div x-show="open" @click.self="open = false" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                                    <form method="POST" action="{{ route('users.store') }}" class="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl" x-data="{ show: true }">
+                                    <form method="POST" action="{{ route('users.store') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl" x-data="{ show: true }">
                                         @csrf <input type="hidden" name="_form" value="user-create"><input type="hidden" name="_tab" value="users">
                                         <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Yeni kullanıcı</h3><button type="button" @click="open = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
                                         <div><label class="form-label">Ad Soyad *</label><input name="name" value="{{ old('name') }}" required class="form-input"></div>
@@ -221,7 +221,7 @@
                                             </template>
                                             <template x-if="edit">
                                             <div x-show="edit" @click.self="edit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                                                <form method="POST" action="{{ route('users.update', $u) }}" class="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl text-left" x-data="{ show: true }">
+                                                <form method="POST" action="{{ route('users.update', $u) }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl text-left" x-data="{ show: true }">
                                                     @csrf @method('PUT')
                                                     <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">{{ $u->name }}</h3><button type="button" @click="edit = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
                                                     <div><label class="form-label">Ad Soyad *</label><input name="name" value="{{ $u->name }}" required class="form-input"></div>
@@ -257,7 +257,7 @@
                         <button type="button" @click="open = true" class="btn-primary"><i class="fa-solid fa-plus"></i> Yeni Kategori</button>
                         <template x-teleport="body">
                             <div x-show="open" @click.self="open = false" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                                <form method="POST" action="{{ route('categories.store') }}" class="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl">
+                                <form method="POST" action="{{ route('categories.store') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl">
                                     @csrf <input type="hidden" name="_form" value="category-create"><input type="hidden" name="_tab" value="categories">
                                     <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Yeni kategori</h3><button type="button" @click="open = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
                                     @include('settings._category_fields', ['cat' => null])
@@ -292,7 +292,7 @@
                                     <template x-teleport="body">
                                         <template x-if="edit">
                                         <div x-show="edit" @click.self="edit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                                            <form method="POST" action="{{ route('categories.update', $c) }}" class="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl text-left">
+                                            <form method="POST" action="{{ route('categories.update', $c) }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl text-left">
                                                 @csrf @method('PUT')
                                                 <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">{{ $c->label }}</h3><button type="button" @click="edit = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
                                                 @include('settings._category_fields', ['cat' => $c])
@@ -328,7 +328,7 @@
                             <button type="button" @click="open = true" class="btn-primary"><i class="fa-solid fa-plus"></i> Yeni</button>
                             <template x-teleport="body">
                                 <div x-show="open" @click.self="open = false" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                                    <form method="POST" action="{{ route('lists.store', $type) }}" class="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl">
+                                    <form method="POST" action="{{ route('lists.store', $type) }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl">
                                         @csrf <input type="hidden" name="_form" value="list-{{ $type }}"><input type="hidden" name="_tab" value="lists">
                                         <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Yeni · {{ $meta['label'] }}</h3><button type="button" @click="open = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
                                         @include('settings._list_fields', ['type' => $type, 'item' => null])
@@ -361,7 +361,7 @@
                                         <template x-teleport="body">
                                             <template x-if="edit">
                                             <div x-show="edit" @click.self="edit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                                                <form method="POST" action="{{ route('lists.update', $item) }}" class="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl text-left">
+                                                <form method="POST" action="{{ route('lists.update', $item) }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl text-left">
                                                     @csrf @method('PUT')
                                                     <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">{{ $item->label }}</h3><button type="button" @click="edit = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
                                                     @include('settings._list_fields', ['type' => $type, 'item' => $item])

@@ -57,6 +57,12 @@ class Expense extends Model
             }
             $e->deduction = max(0, min((float) $e->deduction, (float) $e->amount));
 
+            // "Fiilen ödenen" girildiyse kayıt ödendi sayılır; durumu ayrıca çevirmeye gerek yok
+            // (elden yuvarlak tutar veriliyor, para üstü sonradan iade alınıyor).
+            if ($e->status === 'pending' && (float) $e->paid_amount > 0 && $e->isDirty('paid_amount')) {
+                $e->status = 'paid';
+            }
+
             if ($e->status === 'pending') {
                 $e->paid_at = null;
                 $e->paid_amount = null;

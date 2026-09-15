@@ -16,7 +16,7 @@
                         <button @click="open = true" class="btn-success w-full"><i class="fa-solid fa-check-double"></i> Tümünü ödendi işaretle</button>
                         <template x-teleport="body">
                             <div x-show="open" @click.self="open = false" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                                <form method="POST" action="{{ route('payments.mark-all-paid') }}" class="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl space-y-4">
+                                <form method="POST" action="{{ route('payments.mark-all-paid') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-sm rounded-xl bg-white p-6 shadow-xl space-y-4">
                                     @csrf <input type="hidden" name="year" value="{{ $year }}"><input type="hidden" name="month" value="{{ $month }}">
                                     <h3 class="text-lg font-semibold">Toplu ödeme</h3>
                                     <p class="text-sm text-slate-600">{{ $label }} döneminde bekleyen <b>{{ $payrollTotals['pending_count'] + $payrollTotals['partial_count'] }}</b> kaydın tamamı (<b>@money($payrollTotals['remaining'])</b>) bugün ödendi olarak işaretlenecek.</p>
@@ -115,7 +115,7 @@
                                     <form method="POST" action="{{ route('payments.update', $p) }}"
                                           x-data="{ base: {{ (float) $p->base_salary }}, bonus: {{ (float) $p->bonus }}, advance: {{ (float) $p->advance }}, deduction: {{ (float) $p->deduction }}, paid: {{ (float) $p->paid_amount }},
                                                     get net() { return parseMoney(this.base) + parseMoney(this.bonus) - parseMoney(this.advance) - parseMoney(this.deduction); } }"
-                                          class="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl space-y-4 text-left">
+                                          class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-lg rounded-xl bg-white p-6 shadow-xl space-y-4 text-left">
                                         @csrf @method('PATCH')
                                         <div class="flex items-center justify-between">
                                             <div><h3 class="text-lg font-semibold">{{ $p->employee->full_name }}</h3><div class="text-xs text-slate-500">{{ $p->period_label }}</div></div>

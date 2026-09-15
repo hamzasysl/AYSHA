@@ -205,4 +205,35 @@ class ExpenseTest extends TestCase
             ->assertDontSee('Silinecek personelin notu')
             ->assertDontSee('Kayıp Personel');
     }
+
+    public function test_entering_paid_amount_marks_record_paid_and_tracks_change(): void
+    {
+        $e = Employee::factory()->create();
+        $x = Expense::factory()->create(['employee_id' => $e->id, 'category' => 'travel', 'amount' => 3628, 'status' => 'pending', 'expense_date' => '2026-09-01']);
+
+        // Durum "Bekliyor" kalsa bile elden ödenen tutar girilince kayıt ödendi olur
+        $this->actingAs($this->user)->patch("/muhasebe/{$x->id}", [
+            'category' => 'travel', 'expense_date' => '2026-09-01', 'employee_id' => $e->id,
+            'description' => 'Eylül yol parası', 'amount' => '3.628,00', 'status' => 'pending',
+            'paid_amount' => '3.650,00',
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        $x->refresh();
+        $this->assertSame('paid', $x->status);
+        $this->assertSame('cash', $x->payment_method);
+        $this->assertSame(22.0, $x->overpaid);
+        $this->assertSame(22.0, $x->refund_pending);
+
+        // Para üstü gelince iade alındı
+        $this->actingAs($this->user)->post("/muhasebe/{$x->id}/iade")->assertRedirect();
+        $this->assertSame(0.0, $x->fresh()->refund_pending);
+
+        // Ödenen tutar silinip bekliyora çekilebilir
+        $this->actingAs($this->user)->patch("/muhasebe/{$x->id}", [
+            'category' => 'travel', 'expense_date' => '2026-09-01', 'employee_id' => $e->id,
+            'amount' => '3.628,00', 'status' => 'pending', 'paid_amount' => '',
+        ])->assertRedirect();
+        $this->assertSame('pending', $x->fresh()->status);
+        $this->assertNull($x->fresh()->paid_amount);
+    }
 }

@@ -23,7 +23,7 @@
             <button @click="open = true" class="btn-secondary btn-sm" title="Garanti toplu maaş ödeme dosyası (xlsx)"><i class="fa-solid fa-file-excel"></i> Banka Dosyası</button>
             <template x-teleport="body">
                 <div x-show="open" @click.self="open = false" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <form method="GET" action="{{ route('payments.bank-file') }}" class="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-pop">
+                    <form method="GET" action="{{ route('payments.bank-file') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-pop">
                         <input type="hidden" name="year" value="{{ $year }}"><input type="hidden" name="month" value="{{ $month }}">
                         <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Garanti maaş dosyası</h3><button type="button" @click="open = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
                         <p class="text-sm text-slate-600">Bankanın "TGB Yeni Maaş Dosyası" şablonunda Excel indirilir; Garanti internet şubesine doğrudan yüklenir. Kurum / şube / hesap bilgileri <a href="{{ route('settings.edit') }}" class="text-brand-600 hover:underline">Ayarlar</a>'dan gelir.</p>
@@ -41,7 +41,7 @@
             <button @click="open = true" class="btn-secondary btn-sm" title="Tüm aktif personele bu ayın yemek ücreti ve yol parasını aç"><i class="fa-solid fa-wand-magic-sparkles"></i> Yemek &amp; Yol Oluştur</button>
             <template x-teleport="body">
                 <div x-show="open" @click.self="open = false" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <form method="POST" action="{{ route('expenses.generate-allowances') }}" class="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-pop">
+                    <form method="POST" action="{{ route('expenses.generate-allowances') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-pop">
                         @csrf <input type="hidden" name="year" value="{{ $year }}"><input type="hidden" name="month" value="{{ $month }}">
                         <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">{{ $label }} yemek &amp; yol</h3><button type="button" @click="open = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
                         <p class="text-sm text-slate-600">Tüm aktif personele bu ay için <b>yemek ücreti</b> ve <b>yol parası</b> kaydı açılır. Tutarlar personel kartındaki özel değerden, yoksa <a href="{{ route('settings.edit') }}" class="text-brand-600 hover:underline">Ayarlar</a>'daki standart / emekli tutarlarından alınır. Zaten açılmış olanlar atlanır.</p>
@@ -59,7 +59,7 @@
             <button @click="open = true" class="btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Yeni Kayıt</button>
             <template x-teleport="body">
                 <div x-show="open" @click.self="open = false" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <form method="POST" action="{{ route('expenses.store') }}" class="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl">
+                    <form method="POST" action="{{ route('expenses.store') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl">
                         @csrf <input type="hidden" name="_form" value="expense-create">
                         <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Yeni gider / ödeme kaydı</h3><button type="button" @click="open = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
                         <div class="grid grid-cols-2 gap-3">
@@ -192,7 +192,7 @@
                                     <div x-show="edit" @click.self="edit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                                         <form method="POST" action="{{ route('expenses.update', $x) }}"
                                               x-data="{ amount: {{ (float) $x->amount }}, deduction: {{ (float) $x->deduction }}, paid: {{ $x->paid_amount !== null ? (float) $x->paid_amount : $x->net_amount }}, get net() { return Math.max(0, parseMoney(this.amount) - parseMoney(this.deduction)); }, get over() { return Math.max(0, Math.round((parseMoney(this.paid) - this.net) * 100) / 100); } }"
-                                              class="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl text-left">
+                                              class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl text-left">
                                             @csrf @method('PATCH')
                                             <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Kaydı düzenle</h3><button type="button" @click="edit = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
                                             <div class="grid grid-cols-2 gap-3">
@@ -217,7 +217,8 @@
                                                 <div class="col-span-2"><label class="form-label">Fiilen ödenen (₺) <span class="font-normal normal-case text-slate-400">— elden fazla verdiyseniz buraya yazın</span></label><input name="paid_amount" x-model="paid" placeholder="Boşsa tutara eşit" class="form-input text-right"></div>
                                             </div>
                                             <div x-show="over > 0" x-cloak class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
-                                                <div class="mb-2 flex items-center justify-between text-amber-800"><span><i class="fa-solid fa-rotate-left mr-1"></i>Fazla ödeme (para üstü)</span><b x-text="formatMoney(over)"></b></div>
+                                                <div class="mb-1 flex items-center justify-between text-amber-800"><span><i class="fa-solid fa-rotate-left mr-1"></i>Fazla ödeme (para üstü)</span><b x-text="formatMoney(over)"></b></div>
+                                                <p class="mb-2 text-xs text-amber-700">Kayıt <b>Ödendi</b> olarak işaretlenir; para üstü gelince satırdaki <i class="fa-solid fa-rotate-left"></i> düğmesiyle "iade alındı" deyin.</p>
                                                 <div class="grid grid-cols-2 gap-3">
                                                     <div><label class="form-label">İade alınan</label><input name="refund_amount" value="{{ $x->refund_amount > 0 ? number_format($x->refund_amount, 2, ',', '.') : '' }}" placeholder="0,00" class="form-input text-right"></div>
                                                     <div><label class="form-label">İade tarihi</label><x-date-input name="refund_at" :value="$x->refund_at" /></div>
