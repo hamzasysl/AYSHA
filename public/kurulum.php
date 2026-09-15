@@ -117,11 +117,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $kernel->call('migrate', ['--force' => true]);
             $log[] = 'Veritabanı tabloları hazır. '.trim($kernel->output());
             if ($adminEmail !== '' && strlen($adminPass) >= 6) {
-                $user = App\Models\User::firstOrNew(['username' => $adminUser]);
-                $user->name = $adminName; $user->email = $adminEmail; $user->role = 'admin';
+                // Kullanıcı adı VEYA e-posta eşleşirse var olan hesap güncellenir (veri paketindeki hesapla çakışmasın)
+                $user = App\Models\User::where('username', $adminUser)->orWhere('email', $adminEmail)->first() ?: new App\Models\User();
+                $existed = $user->exists;
+                $user->name = $adminName; $user->username = $adminUser; $user->email = $adminEmail; $user->role = 'admin';
                 $user->password = Illuminate\Support\Facades\Hash::make($adminPass); $user->email_verified_at = now();
                 $user->save();
-                $log[] = "Yönetici hesabı hazır: {$adminUser}";
+                $log[] = ($existed ? 'Yönetici hesabı güncellendi: ' : 'Yönetici hesabı oluşturuldu: ')."{$adminUser} (giriş şifresi: girdiğiniz şifre)";
             } else {
                 $log[] = 'Yönetici: veri paketindeki kullanıcılar (ayse, batuhan) ve şifreleri aynen geçerli.';
             }
