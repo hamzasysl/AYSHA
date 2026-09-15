@@ -12,6 +12,7 @@ use App\Http\Controllers\PerformanceReviewController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SalaryPaymentController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\SystemController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -88,5 +89,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/ayarlar/listeler/{type}', [ListItemController::class, 'store'])->name('lists.store')->whereIn('type', ['position', 'bank', 'leave_type']);
         Route::put('/ayarlar/listeler/{item}', [ListItemController::class, 'update'])->name('lists.update');
         Route::delete('/ayarlar/listeler/{item}', [ListItemController::class, 'destroy'])->name('lists.destroy');
+        Route::post('/ayarlar/sistem/guncelle', [SystemController::class, 'migrate'])->name('system.migrate');
+        Route::post('/ayarlar/sistem/onbellek', [SystemController::class, 'clearCache'])->name('system.cache');
     });
 });

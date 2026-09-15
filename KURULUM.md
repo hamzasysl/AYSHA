@@ -24,9 +24,13 @@ Ana alan adının belge kökü değiştirilemiyorsa: `.cpanel.yml` içindeki `DE
 
 Veri paketi `database/veri.enc` dosyasıdır (AES-256, repoda şifreli durur). Yerel veriyi yeniden paketlemek için: `php artisan aysha:veri-paketle --sifre="TTB-..."` ve commit.
 
-## 6. Güncelleme
-GitHub'a push edildikçe cPanel > Git Version Control > Manage > **Update from Remote** > **Deploy HEAD Commit**. `.env` ve `storage` korunur.
+## 6. Güncelleme (terminal gerekmez)
+1. cPanel > Git™ Version Control > Manage > **Update from Remote** > **Deploy HEAD Commit**.
+2. Uygulamaya girip **Ayarlar > Sistem > Güncellemeleri uygula** düğmesine basın.
 
+İkinci adım veritabanına eklenen yeni alanları uygular ve önbelleği temizler. Bekleyen güncelleme varsa aynı sayfada sarı uyarı olarak görünür. Sadece görünüm değiştiyse "Önbelleği temizle" yeterlidir.
+
+Sunucuda `composer` ve `npm` gerekmez: `vendor/` ve derlenmiş `public/build/` dosyaları depoda hazır gelir. `.env` ve `storage` klasörü deploy sırasında korunur.
 ## Notlar
 - `.env` asla repoya girmez; sunucuda kurulum sayfası oluşturur.
 - Sorun olursa `personel/storage/logs/laravel.log` dosyasına bakın.

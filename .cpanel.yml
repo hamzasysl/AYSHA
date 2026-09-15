@@ -14,4 +14,5 @@ deployment:
     - /bin/mkdir -p $DEPLOYPATH/storage/framework/cache/data $DEPLOYPATH/storage/framework/sessions $DEPLOYPATH/storage/framework/views $DEPLOYPATH/storage/logs $DEPLOYPATH/bootstrap/cache
     - /bin/rm -rf $DEPLOYPATH/storage/framework/views/*
     - /bin/rm -f $DEPLOYPATH/bootstrap/cache/*.php
+    - /bin/rm -rf $DEPLOYPATH/storage/framework/cache/data/*
     - /bin/chmod -R u+rwX $DEPLOYPATH/storage $DEPLOYPATH/bootstrap/cache
