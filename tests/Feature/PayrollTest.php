@@ -161,4 +161,46 @@ class PayrollTest extends TestCase
             ->assertSee('Fatma Demir')->assertSee('22.000,00 ₺')->assertSee($e->formatted_iban);
         $this->actingAs($this->user)->get('/muhasebe?category=salary&year=2026&month=9&status=paid')->assertOk()->assertDontSee('Fatma Demir');
     }
+
+    public function test_bulk_actions_on_payroll_rows(): void
+    {
+        $employees = Employee::factory()->count(3)->create(['salary' => 25000]);
+        $this->actingAs($this->user)->post('/maas/olustur', ['year' => 2026, 'month' => 9])->assertRedirect();
+        $ids = SalaryPayment::pluck('id')->all();
+
+        // Toplu ödendi
+        $this->actingAs($this->user)->post('/maas/toplu-durum', ['ids' => $ids, 'status' => 'paid'])
+            ->assertRedirect()->assertSessionHas('success', '3 maaş kaydı "Ödendi" olarak işaretlendi.');
+        $this->assertSame(3, SalaryPayment::where('status', 'paid')->count());
+
+        // Toplu düzenleme: sadece dolu alanlar
+        $this->actingAs($this->user)->post('/maas/toplu-duzenle', [
+            'ids' => $ids, 'bonus' => '1.500,00', 'payment_method' => 'cash', 'advance' => '', 'deduction' => '', 'paid_amount' => '',
+        ])->assertSessionHasNoErrors()->assertRedirect()->assertSessionHas('success', '3 maaş kaydı güncellendi.');
+
+        foreach (SalaryPayment::all() as $p) {
+            $this->assertSame('1500.00', (string) $p->bonus);
+            $this->assertSame('cash', $p->payment_method);
+            $this->assertSame('25000.00', (string) $p->base_salary);   // dokunulmadı
+            $this->assertSame('partial', $p->status);                  // prim eklenince net arttı
+        }
+
+        // Toplu silme
+        $this->actingAs($this->user)->post('/maas/toplu-sil', ['ids' => $ids])
+            ->assertRedirect()->assertSessionHas('success', '3 maaş kaydı silindi.');
+        $this->assertSame(0, SalaryPayment::count());
+    }
+
+    public function test_viewer_cannot_use_payroll_bulk_actions(): void
+    {
+        $viewer = User::factory()->create(['role' => 'viewer']);
+        Employee::factory()->create(['salary' => 25000]);
+        $this->actingAs($this->user)->post('/maas/olustur', ['year' => 2026, 'month' => 9]);
+        $ids = SalaryPayment::pluck('id')->all();
+
+        $this->actingAs($viewer)->post('/maas/toplu-durum', ['ids' => $ids, 'status' => 'paid'])->assertForbidden();
+        $this->actingAs($viewer)->post('/maas/toplu-duzenle', ['ids' => $ids, 'bonus' => '100'])->assertForbidden();
+        $this->actingAs($viewer)->post('/maas/toplu-sil', ['ids' => $ids])->assertForbidden();
+        $this->assertSame(1, SalaryPayment::count());
+    }
 }

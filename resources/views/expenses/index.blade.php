@@ -127,16 +127,24 @@
     @if ($category === 'salary')
         @include('payments._section')
     @else
-    <div>
+    <div x-data="{
+            sel: [],
+            ids: {{ $expenses->pluck('id')->toJson() }},
+            bulkEdit: false,
+            bulkDelete: false,
+            get allChecked() { return this.ids.length > 0 && this.sel.length === this.ids.length; },
+            toggleAll(on) { this.sel = on ? [...this.ids] : []; },
+        }">
         {{-- Kayıt listesi --}}
         <div class="card overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full table-hover">
-                    <thead><tr><th class="th">Personel</th><th class="th">Tarih</th><th class="th">Kategori</th><th class="th">Açıklama</th><th class="th text-right">Tutar</th><th class="th">Durum</th><th class="th">Ödeme</th><th class="th text-right">İşlem</th></tr></thead>
+                    <thead><tr>@can('edit')<th class="th w-10"><input type="checkbox" class="row-check" :checked="allChecked" @change="toggleAll($event.target.checked)" title="Tümünü seç"></th>@endcan<th class="th">Personel</th><th class="th">Tarih</th><th class="th">Kategori</th><th class="th">Açıklama</th><th class="th text-right">Tutar</th><th class="th">Durum</th><th class="th">Ödeme</th><th class="th text-right">İşlem</th></tr></thead>
                     <tbody class="divide-y divide-slate-100">
                     @forelse ($expenses as $x)
                         @php $meta = $cats[$x->category]; @endphp
                         <tr class="hover:bg-slate-50/70" x-data="{ edit: false, notes: false, noteCount: {{ $x->notes->count() }} }" @notes-count.window="if ($event.detail.key === 'expenses-{{ $x->id }}') noteCount = $event.detail.count">
+                            @can('edit')<td class="td"><input type="checkbox" class="row-check" value="{{ $x->id }}" x-model.number="sel"></td>@endcan
                             <td class="td whitespace-nowrap">
                                 @if ($x->employee)<a href="{{ route('employees.show', ['employee' => $x->employee, 'tab' => 'expenses']) }}" class="font-medium text-slate-900 hover:text-brand-600">{{ $x->employee->full_name }}</a>
                                 <div class="text-[11px] text-slate-500">{{ $x->employee->position }}</div>
@@ -232,12 +240,12 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="px-5 py-12 text-center text-sm text-slate-500">{{ $label }} için bu filtrede kayıt yok. Sağ üstten <b>Yeni Kayıt</b> veya <b>Toplu Kayıt</b> ekleyin.</td></tr>
+                        <tr><td colspan="{{ auth()->user()->can('edit') ? 9 : 8 }}" class="px-5 py-12 text-center text-sm text-slate-500">{{ $label }} için bu filtrede kayıt yok. Sağ üstten <b>Yeni Kayıt</b> veya <b>Toplu Kayıt</b> ekleyin.</td></tr>
                     @endforelse
                     </tbody>
                     @if ($expenses->isNotEmpty())
                     <tfoot class="bg-slate-50 text-sm font-semibold"><tr>
-                        <td class="px-4 py-3" colspan="4">Toplam ({{ $expenses->count() }} kayıt)</td>
+                        <td class="px-4 py-3" colspan="{{ auth()->user()->can('edit') ? 5 : 4 }}">Toplam ({{ $expenses->count() }} kayıt)</td>
                         <td class="px-4 py-3 text-right">@money($expenses->sum(fn ($x) => $x->net_amount))</td>
                         <td class="px-4 py-3 text-xs font-normal text-slate-500" colspan="3">Ödenen @money($expenses->where('status', 'paid')->sum(fn ($x) => $x->net_amount)) · Bekleyen @money($expenses->where('status', 'pending')->sum(fn ($x) => $x->net_amount))@if ($expenses->sum('deduction') > 0) · Kesinti @money($expenses->sum('deduction'))@endif</td>
                     </tr></tfoot>
@@ -245,6 +253,88 @@
                 </table>
             </div>
         </div>
+
+        {{-- Toplu işlem çubuğu son satırları kapatmasın --}}
+        <div x-show="sel.length > 0" x-cloak class="h-20"></div>
+
+        @can('edit')
+        {{-- Toplu işlem çubuğu: seçim yapılınca ekranın altında belirir --}}
+        <template x-teleport="body">
+            <div x-show="sel.length > 0" x-cloak x-transition.opacity class="fixed inset-x-0 bottom-0 z-40 flex justify-center p-4">
+                <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 shadow-pop">
+                    <span class="mr-1 text-sm font-semibold text-slate-900"><span x-text="sel.length"></span> kayıt seçildi</span>
+                    <button type="button" @click="sel = []" class="btn-secondary btn-sm"><i class="fa-solid fa-xmark"></i> Seçimi bırak</button>
+                    <span class="mx-1 h-6 w-px bg-slate-200"></span>
+
+                    <form method="POST" action="{{ route('expenses.bulk-status') }}">@csrf
+                        <input type="hidden" name="status" value="paid">
+                        <template x-for="id in sel" :key="id"><input type="hidden" name="ids[]" :value="id"></template>
+                        <button class="btn-success btn-sm"><i class="fa-solid fa-circle-check"></i> Ödendi yap</button>
+                    </form>
+                    <form method="POST" action="{{ route('expenses.bulk-status') }}">@csrf
+                        <input type="hidden" name="status" value="pending">
+                        <template x-for="id in sel" :key="id"><input type="hidden" name="ids[]" :value="id"></template>
+                        <button class="btn-secondary btn-sm"><i class="fa-solid fa-clock"></i> Bekliyor yap</button>
+                    </form>
+                    <button type="button" @click="bulkEdit = true" class="btn-primary btn-sm"><i class="fa-solid fa-pen"></i> Toplu düzenle</button>
+                    @can('delete')<button type="button" @click="bulkDelete = true" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i> Sil</button>@endcan
+                </div>
+            </div>
+        </template>
+
+        {{-- Toplu düzenleme penceresi: boş bırakılan alanlar değişmez --}}
+        <template x-teleport="body">
+            <template x-if="bulkEdit">
+            <div x-show="bulkEdit" @click.self="bulkEdit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <form method="POST" action="{{ route('expenses.bulk-update') }}"
+                      class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl text-left">
+                    @csrf
+                    <template x-for="id in sel" :key="id"><input type="hidden" name="ids[]" :value="id"></template>
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">Toplu düzenle · <span x-text="sel.length"></span> kayıt</h3>
+                        <button type="button" @click="bulkEdit = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+                    <p class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600"><i class="fa-solid fa-circle-info mr-1 text-slate-400"></i>Sadece doldurduğunuz alanlar değişir; boş bıraktıklarınız her kayıtta olduğu gibi kalır. Tutarlar <b>kişi başı</b>dır.</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="form-label">Durum</label>
+                            <x-ui-select name="status" :search="false" placeholder="Değiştirme"><option value="">Değiştirme</option><option value="pending">Bekliyor</option><option value="paid">Ödendi</option></x-ui-select></div>
+                        <div><label class="form-label">Fiilen ödenen (₺)</label><input name="paid_amount" inputmode="decimal" placeholder="Örn. 3.650,00" class="form-input text-right"></div>
+                        <div><label class="form-label">Ödeme yöntemi</label>
+                            <x-ui-select name="payment_method" :search="false" placeholder="Değiştirme"><option value="">Değiştirme</option>@foreach (\App\Models\Expense::METHODS as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</x-ui-select></div>
+                        <div><label class="form-label">Ödeme tarihi</label><x-date-input name="paid_at" /></div>
+                        <div><label class="form-label">Tutar (₺)</label><input name="amount" inputmode="decimal" placeholder="Değiştirme" class="form-input text-right"></div>
+                        <div><label class="form-label">Kesinti (₺)</label><input name="deduction" inputmode="decimal" placeholder="Değiştirme" class="form-input text-right"></div>
+                        <div><label class="form-label">Kategori</label>
+                            <x-ui-select name="category" :search="false" placeholder="Değiştirme"><option value="">Değiştirme</option>@foreach ($cats as $k => $c)<option value="{{ $k }}">{{ $c['label'] }}</option>@endforeach</x-ui-select></div>
+                        <div><label class="form-label">Tarih</label><x-date-input name="expense_date" /></div>
+                        <div class="col-span-2"><label class="form-label">Açıklama</label><input name="description" placeholder="Değiştirme" class="form-input"></div>
+                    </div>
+                    <div class="flex justify-end gap-2"><button type="button" @click="bulkEdit = false" class="btn-secondary">Vazgeç</button><button class="btn-success"><i class="fa-solid fa-floppy-disk"></i> Seçili kayıtlara uygula</button></div>
+                </form>
+            </div>
+            </template>
+        </template>
+
+        @can('delete')
+        {{-- Toplu silme onayı --}}
+        <template x-teleport="body">
+            <template x-if="bulkDelete">
+            <div x-show="bulkDelete" @click.self="bulkDelete = false" x-transition.opacity class="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+                <form method="POST" action="{{ route('expenses.bulk-destroy') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-xl text-left">
+                    @csrf
+                    <template x-for="id in sel" :key="id"><input type="hidden" name="ids[]" :value="id"></template>
+                    <div class="mb-3 flex items-center gap-3">
+                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-50 text-red-600"><i class="fa-solid fa-trash"></i></span>
+                        <h3 class="text-base font-semibold text-slate-900">Kayıtları sil</h3>
+                    </div>
+                    <p class="text-sm text-slate-600">Seçili <b x-text="sel.length"></b> kayıt ve notları kalıcı olarak silinecek. Bu işlem geri alınamaz.</p>
+                    <div class="mt-4 flex justify-end gap-2"><button type="button" @click="bulkDelete = false" class="btn-secondary">Vazgeç</button><button class="btn-danger"><i class="fa-solid fa-trash"></i> Evet, sil</button></div>
+                </form>
+            </div>
+            </template>
+        </template>
+        @endcan
+        @endcan
 
     </div>
     @endif

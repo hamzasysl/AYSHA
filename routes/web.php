@@ -49,6 +49,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('/notlar/{note}', [NoteController::class, 'update'])->name('notes.update');
 
         Route::post('/maas/olustur', [SalaryPaymentController::class, 'generate'])->name('payments.generate');
+        Route::post('/maas/toplu-durum', [SalaryPaymentController::class, 'bulkStatus'])->name('payments.bulk-status');
+        Route::post('/maas/toplu-duzenle', [SalaryPaymentController::class, 'bulkUpdate'])->name('payments.bulk-update');
         Route::post('/maas/tumunu-ode', [SalaryPaymentController::class, 'markAllPaid'])->name('payments.mark-all-paid');
         Route::patch('/maas/{payment}', [SalaryPaymentController::class, 'update'])->name('payments.update');
         Route::post('/maas/{payment}/odendi', [SalaryPaymentController::class, 'markPaid'])->name('payments.mark-paid');
@@ -57,6 +59,8 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/muhasebe', [ExpenseController::class, 'store'])->name('expenses.store');
         Route::post('/muhasebe/toplu', [ExpenseController::class, 'bulkStore'])->name('expenses.bulk');
+        Route::post('/muhasebe/toplu-duzenle', [ExpenseController::class, 'bulkUpdate'])->name('expenses.bulk-update');
+        Route::post('/muhasebe/toplu-durum', [ExpenseController::class, 'bulkStatus'])->name('expenses.bulk-status');
         Route::post('/muhasebe/yemek-yol-olustur', [ExpenseController::class, 'generateAllowances'])->name('expenses.generate-allowances');
         Route::patch('/muhasebe/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
         Route::post('/muhasebe/{expense}/odendi', [ExpenseController::class, 'markPaid'])->name('expenses.mark-paid');
@@ -71,7 +75,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:delete')->group(function () {
         Route::resource('personel', EmployeeController::class)->names('employees')->parameters(['personel' => 'employee'])->only(['destroy']);
         Route::delete('/notlar/{note}', [NoteController::class, 'destroy'])->name('notes.destroy');
+        Route::post('/maas/toplu-sil', [SalaryPaymentController::class, 'bulkDestroy'])->name('payments.bulk-destroy');
         Route::delete('/maas/{payment}', [SalaryPaymentController::class, 'destroy'])->name('payments.destroy');
+        Route::post('/muhasebe/toplu-sil', [ExpenseController::class, 'bulkDestroy'])->name('expenses.bulk-destroy');
         Route::delete('/muhasebe/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
         Route::resource('performans', PerformanceReviewController::class)->names('reviews')->parameters(['performans' => 'review'])->only(['destroy']);
         Route::resource('izinler', LeaveController::class)->names('leaves')->parameters(['izinler' => 'leave'])->only(['destroy']);

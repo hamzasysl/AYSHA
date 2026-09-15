@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\SalaryPayment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use App\Support\GarantiPayrollFile;
 use Illuminate\Support\Facades\DB;
 
@@ -160,6 +161,93 @@ class SalaryPaymentController extends Controller
         $payment->save();
 
         return back()->with('success', $payment->employee->full_name.' için '.number_format($payment->overpaid, 2, ',', '.').' ₺ iade alındı olarak işaretlendi.');
+    }
+
+    /** Toplu durum: seçilen bordro satırlarını ödendi / bekliyor yapar. */
+    public function bulkStatus(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+            'status' => ['required', 'in:pending,paid'],
+        ], [], ['ids' => 'kayıt']);
+
+        $payments = SalaryPayment::whereIn('id', $data['ids'])->get();
+        foreach ($payments as $payment) {
+            if ($data['status'] === 'paid') {
+                $payment->paid_amount = max((float) $payment->paid_amount, (float) $payment->net_amount);
+                $payment->payment_method = $payment->payment_method ?? 'transfer';
+                $payment->paid_at = $payment->paid_at ?? now()->toDateString();
+            } else {
+                $payment->paid_amount = 0;
+                $payment->payment_method = null;
+            }
+            $payment->save();
+        }
+
+        return back()->with('success', $payments->count().' maaş kaydı "'.($data['status'] === 'paid' ? 'Ödendi' : 'Bekliyor').'" olarak işaretlendi.');
+    }
+
+    /** Toplu düzenleme: sadece doldurulan alanlar seçilen bordro satırlarına uygulanır. */
+    public function bulkUpdate(Request $request): RedirectResponse
+    {
+        $money = fn ($v) => $v === null || trim((string) $v) === ''
+            ? null
+            : (float) str_replace(['.', ','], ['', '.'], preg_replace('/[^\d,.]/', '', (string) $v));
+
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+            'bonus' => ['nullable', 'string'],
+            'advance' => ['nullable', 'string'],
+            'deduction' => ['nullable', 'string'],
+            'paid_amount' => ['nullable', 'string'],
+            'payment_method' => ['nullable', Rule::in(array_keys(SalaryPayment::METHODS))],
+            'paid_at' => ['nullable', 'date'],
+            'note' => ['nullable', 'string', 'max:255'],
+        ], [], ['ids' => 'kayıt', 'paid_amount' => 'fiilen ödenen']);
+
+        $values = [
+            'bonus' => $money($data['bonus'] ?? null),
+            'advance' => $money($data['advance'] ?? null),
+            'deduction' => $money($data['deduction'] ?? null),
+            'paid_amount' => $money($data['paid_amount'] ?? null),
+        ];
+
+        $payments = SalaryPayment::whereIn('id', $data['ids'])->get();
+        abort_if($payments->isEmpty(), 404, 'Seçili kayıt bulunamadı.');
+
+        foreach ($payments as $payment) {
+            foreach ($values as $field => $value) {
+                if ($value !== null) {
+                    $payment->{$field} = $value;
+                }
+            }
+            foreach (['payment_method', 'paid_at', 'note'] as $field) {
+                if (($data[$field] ?? null) !== null && $data[$field] !== '') {
+                    $payment->{$field} = $data[$field];
+                }
+            }
+            $payment->save();
+        }
+
+        return back()->with('success', $payments->count().' maaş kaydı güncellendi.');
+    }
+
+    /** Toplu silme. */
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+        ], [], ['ids' => 'kayıt']);
+
+        $payments = SalaryPayment::whereIn('id', $data['ids'])->get();
+        foreach ($payments as $payment) {
+            $payment->delete();
+        }
+
+        return back()->with('success', $payments->count().' maaş kaydı silindi.');
     }
 
     public function destroy(SalaryPayment $payment): RedirectResponse

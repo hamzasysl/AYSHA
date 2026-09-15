@@ -226,6 +226,90 @@ class ExpenseController extends Controller
         return back()->with('success', number_format($expense->overpaid, 2, ',', '.').' ₺ iade alındı olarak işaretlendi.');
     }
 
+    /** Toplu düzenleme: sadece doldurulan alanlar seçili kayıtlara uygulanır. */
+    public function bulkUpdate(Request $request): RedirectResponse
+    {
+        $money = fn ($v) => $v === null || trim((string) $v) === ''
+            ? null
+            : (float) str_replace(['.', ','], ['', '.'], preg_replace('/[^\d,.]/', '', (string) $v));
+
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+            'status' => ['nullable', Rule::in(array_keys(Expense::STATUSES))],
+            'category' => ['nullable', Rule::in(array_keys(Expense::categories()))],
+            'expense_date' => ['nullable', 'date'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'amount' => ['nullable', 'string'],
+            'deduction' => ['nullable', 'string'],
+            'deduction_note' => ['nullable', 'string', 'max:255'],
+            'payment_method' => ['nullable', Rule::in(array_keys(Expense::METHODS))],
+            'paid_at' => ['nullable', 'date'],
+            'paid_amount' => ['nullable', 'string'],
+        ], [], ['ids' => 'kayıt', 'amount' => 'tutar', 'paid_amount' => 'fiilen ödenen', 'expense_date' => 'tarih']);
+
+        $amount = $money($data['amount'] ?? null);
+        $deduction = $money($data['deduction'] ?? null);
+        $paidAmount = $money($data['paid_amount'] ?? null);
+
+        $expenses = Expense::whereIn('id', $data['ids'])->get();
+        abort_if($expenses->isEmpty(), 404, 'Seçili kayıt bulunamadı.');
+
+        foreach ($expenses as $expense) {
+            foreach (['category', 'expense_date', 'description', 'deduction_note', 'payment_method', 'paid_at', 'status'] as $field) {
+                if (($data[$field] ?? null) !== null && $data[$field] !== '') {
+                    $expense->{$field} = $data[$field];
+                }
+            }
+            if ($amount !== null) {
+                $expense->amount = $amount;
+            }
+            if ($deduction !== null) {
+                $expense->deduction = $deduction;
+            }
+            if ($paidAmount !== null) {
+                $expense->paid_amount = $paidAmount;
+            }
+            $expense->save();
+        }
+
+        return back()->with('success', $expenses->count().' kayıt güncellendi.');
+    }
+
+    /** Toplu durum değişikliği (ödendi / bekliyor). */
+    public function bulkStatus(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+            'status' => ['required', Rule::in(array_keys(Expense::STATUSES))],
+        ], [], ['ids' => 'kayıt']);
+
+        $expenses = Expense::whereIn('id', $data['ids'])->get();
+        foreach ($expenses as $expense) {
+            $expense->status = $data['status'];
+            $expense->save();
+        }
+
+        return back()->with('success', $expenses->count().' kayıt "'.Expense::STATUSES[$data['status']].'" olarak işaretlendi.');
+    }
+
+    /** Toplu silme. Notlar da silinsin diye tek tek silinir (model olayları çalışsın). */
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+        ], [], ['ids' => 'kayıt']);
+
+        $expenses = Expense::whereIn('id', $data['ids'])->get();
+        foreach ($expenses as $expense) {
+            $expense->delete();
+        }
+
+        return back()->with('success', $expenses->count().' kayıt silindi.');
+    }
+
     public function destroy(Expense $expense): RedirectResponse
     {
         $expense->delete();

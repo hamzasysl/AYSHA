@@ -97,6 +97,12 @@ body { background: #f4f6fb; color: #0f172a; }
 }
 .page-actions .btn-danger { height: 40px; padding-left: 1rem; padding-right: 1rem; font-size: 13.5px; border-radius: .6rem; }
 
+/* ---- Toplu seçim kutusu (muhasebe satırları) ---- */
+.row-check {
+    @apply h-4 w-4 shrink-0 rounded border-slate-300 text-brand-600 transition;
+    accent-color: #1e6ff2;
+}
+
 /* ---- Tom Select ---- */
 .ts-wrapper { @apply text-sm; }
 .ts-wrapper.single .ts-control,
@@ -211,6 +217,7 @@ button:disabled { cursor: not-allowed; }
 .dark .btn-icon:hover { background: #172238; color: #fff; }
 .dark .btn-icon-danger { color: #f87171; } .dark .btn-icon-primary { color: #34d399; }
 .dark .chip-active, .dark .chip-active:hover { background: #1e6ff2; border-color: #1e6ff2; color: #fff; }
+.dark .row-check { border-color: #334155; background: #0f172a; }
 .dark .badge { background: #1e293b; color: #cbd5e1; }
 .dark .badge-ok { background: rgba(16,185,129,.16); color: #6ee7b7; }
 .dark .badge-warn { background: rgba(245,158,11,.16); color: #fcd34d; }

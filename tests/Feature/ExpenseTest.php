@@ -251,4 +251,54 @@ class ExpenseTest extends TestCase
         $this->actingAs($this->user)->get('/raporlar?year=2026&tab=employees')->assertOk()
             ->assertSee('22,00 ₺ iade bekliyor', false);
     }
+
+    public function test_bulk_status_and_bulk_update_and_bulk_delete(): void
+    {
+        $ids = Employee::factory()->count(3)->create()->pluck('id');
+        $expenses = $ids->map(fn ($id) => Expense::factory()->create([
+            'employee_id' => $id, 'category' => 'travel', 'amount' => 3628, 'status' => 'pending', 'expense_date' => '2026-09-01',
+        ]));
+        $all = $expenses->pluck('id')->all();
+
+        // Toplu ödendi
+        $this->actingAs($this->user)->post('/muhasebe/toplu-durum', ['ids' => $all, 'status' => 'paid'])
+            ->assertRedirect()->assertSessionHas('success', '3 kayıt "Ödendi" olarak işaretlendi.');
+        $this->assertSame(3, Expense::where('status', 'paid')->where('payment_method', 'cash')->count());
+
+        // Toplu düzenleme: sadece dolu alanlar uygulanır (kişi başı 3.650 elden verildi)
+        $this->actingAs($this->user)->post('/muhasebe/toplu-duzenle', [
+            'ids' => $all, 'paid_amount' => '3.650,00', 'description' => 'Eylül yol parası',
+            'status' => '', 'category' => '', 'amount' => '', 'deduction' => '',
+        ])->assertSessionHasNoErrors()->assertRedirect()->assertSessionHas('success', '3 kayıt güncellendi.');
+
+        foreach ($expenses as $x) {
+            $x->refresh();
+            $this->assertSame('paid', $x->status);
+            $this->assertSame('travel', $x->category);            // boş bırakılan alan değişmedi
+            $this->assertSame('3628.00', (string) $x->amount);
+            $this->assertSame('Eylül yol parası', $x->description);
+            $this->assertSame(22.0, $x->refund_pending);
+        }
+
+        // Toplu silme notları da siler
+        $first = $expenses->first();
+        $this->actingAs($this->user)->post("/notlar/expenses/{$first->id}", ['content' => 'Fiş yok'])->assertRedirect();
+        $this->assertSame(1, \App\Models\Note::count());
+
+        $this->actingAs($this->user)->post('/muhasebe/toplu-sil', ['ids' => $all])
+            ->assertRedirect()->assertSessionHas('success', '3 kayıt silindi.');
+        $this->assertSame(0, Expense::count());
+        $this->assertSame(0, \App\Models\Note::count());
+    }
+
+    public function test_viewer_cannot_use_bulk_actions(): void
+    {
+        $viewer = User::factory()->create(['role' => 'viewer']);
+        $x = Expense::factory()->create(['category' => 'cleaning', 'employee_id' => null]);
+
+        $this->actingAs($viewer)->post('/muhasebe/toplu-durum', ['ids' => [$x->id], 'status' => 'paid'])->assertForbidden();
+        $this->actingAs($viewer)->post('/muhasebe/toplu-duzenle', ['ids' => [$x->id], 'amount' => '10'])->assertForbidden();
+        $this->actingAs($viewer)->post('/muhasebe/toplu-sil', ['ids' => [$x->id]])->assertForbidden();
+        $this->assertSame(1, Expense::count());
+    }
 }

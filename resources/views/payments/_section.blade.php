@@ -49,10 +49,19 @@
     </div>
     @endif
 
+    <div x-data="{
+            sel: [],
+            ids: {{ $payments->pluck('id')->toJson() }},
+            bulkEdit: false,
+            bulkDelete: false,
+            get allChecked() { return this.ids.length > 0 && this.sel.length === this.ids.length; },
+            toggleAll(on) { this.sel = on ? [...this.ids] : []; },
+        }">
     <div class="card overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full table-hover">
                 <thead><tr>
+                    @can('edit')<th class="th w-10"><input type="checkbox" class="row-check" :checked="allChecked" @change="toggleAll($event.target.checked)" title="Tümünü seç"></th>@endcan
                     <th class="th">Personel</th><th class="th">IBAN</th><th class="th text-right">Maaş</th><th class="th text-right">Prim</th>
                     <th class="th text-right">Avans</th><th class="th text-right">Kesinti</th><th class="th text-right">Net</th><th class="th text-right">Ödenen</th>
                     <th class="th">Durum</th><th class="th">Ödeme</th><th class="th text-right">İşlem</th>
@@ -60,6 +69,7 @@
                 <tbody class="divide-y divide-slate-100">
                 @forelse ($payments as $p)
                     <tr class="hover:bg-slate-50/70" x-data="{ edit: false }">
+                        @can('edit')<td class="td"><input type="checkbox" class="row-check" value="{{ $p->id }}" x-model.number="sel"></td>@endcan
                         <td class="td whitespace-nowrap">
                             <a href="{{ route('employees.show', ['employee' => $p->employee, 'tab' => 'payments']) }}" class="font-medium text-slate-900 hover:text-brand-600">{{ $p->employee->full_name }}</a>
                             <div class="text-[11px] text-slate-500">{{ $p->employee->position }}</div>
@@ -154,16 +164,16 @@
                             </template>
                         </td>
                     </tr>
-                    @if ($p->note)<tr><td colspan="11" class="px-4 pb-2 -mt-2 text-[11px] text-slate-400"><i class="fa-regular fa-comment mr-1"></i>{{ $p->note }}</td></tr>@endif
+                    @if ($p->note)<tr><td colspan="{{ auth()->user()->can('edit') ? 12 : 11 }}" class="px-4 pb-2 -mt-2 text-[11px] text-slate-400"><i class="fa-regular fa-comment mr-1"></i>{{ $p->note }}</td></tr>@endif
                 @empty
-                    <tr><td colspan="11" class="px-5 py-12 text-center text-sm text-slate-500">
+                    <tr><td colspan="{{ auth()->user()->can('edit') ? 12 : 11 }}" class="px-5 py-12 text-center text-sm text-slate-500">
                         @if ($payrollTotals['count'] === 0) {{ $label }} için henüz bordro oluşturulmadı. @else Bu filtreye uyan kayıt yok. @endif
                     </td></tr>
                 @endforelse
                 </tbody>
                 @if ($payments->isNotEmpty())
                 <tfoot class="bg-slate-50 text-sm font-semibold"><tr>
-                    <td class="px-4 py-3" colspan="2">Toplam ({{ $payments->count() }})</td>
+                    <td class="px-4 py-3" colspan="{{ auth()->user()->can('edit') ? 3 : 2 }}">Toplam ({{ $payments->count() }})</td>
                     <td class="px-4 py-3 text-right">@money($payments->sum('base_salary'))</td>
                     <td class="px-4 py-3 text-right text-emerald-700">@money($payments->sum('bonus'))</td>
                     <td class="px-4 py-3 text-right text-red-600">@money($payments->sum('advance'))</td>
@@ -175,6 +185,85 @@
                 @endif
             </table>
         </div>
+    </div>
+
+    {{-- Toplu işlem çubuğu son satırları kapatmasın --}}
+    <div x-show="sel.length > 0" x-cloak class="h-20"></div>
+
+    @can('edit')
+    {{-- Toplu işlem çubuğu (maaşlar) --}}
+    <template x-teleport="body">
+        <div x-show="sel.length > 0" x-cloak x-transition.opacity class="fixed inset-x-0 bottom-0 z-40 flex justify-center p-4">
+            <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 shadow-pop">
+                <span class="mr-1 text-sm font-semibold text-slate-900"><span x-text="sel.length"></span> maaş seçildi</span>
+                <button type="button" @click="sel = []" class="btn-secondary btn-sm"><i class="fa-solid fa-xmark"></i> Seçimi bırak</button>
+                <span class="mx-1 h-6 w-px bg-slate-200"></span>
+
+                <form method="POST" action="{{ route('payments.bulk-status') }}">@csrf
+                    <input type="hidden" name="status" value="paid">
+                    <template x-for="id in sel" :key="id"><input type="hidden" name="ids[]" :value="id"></template>
+                    <button class="btn-success btn-sm"><i class="fa-solid fa-circle-check"></i> Ödendi yap</button>
+                </form>
+                <form method="POST" action="{{ route('payments.bulk-status') }}">@csrf
+                    <input type="hidden" name="status" value="pending">
+                    <template x-for="id in sel" :key="id"><input type="hidden" name="ids[]" :value="id"></template>
+                    <button class="btn-secondary btn-sm"><i class="fa-solid fa-clock"></i> Bekliyor yap</button>
+                </form>
+                <button type="button" @click="bulkEdit = true" class="btn-primary btn-sm"><i class="fa-solid fa-pen"></i> Toplu düzenle</button>
+                @can('delete')<button type="button" @click="bulkDelete = true" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i> Sil</button>@endcan
+            </div>
+        </div>
+    </template>
+
+    {{-- Toplu düzenleme penceresi (maaşlar) --}}
+    <template x-teleport="body">
+        <template x-if="bulkEdit">
+        <div x-show="bulkEdit" @click.self="bulkEdit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <form method="POST" action="{{ route('payments.bulk-update') }}"
+                  class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl text-left">
+                @csrf
+                <template x-for="id in sel" :key="id"><input type="hidden" name="ids[]" :value="id"></template>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold">Toplu düzenle · <span x-text="sel.length"></span> maaş</h3>
+                    <button type="button" @click="bulkEdit = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <p class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600"><i class="fa-solid fa-circle-info mr-1 text-slate-400"></i>Sadece doldurduğunuz alanlar değişir; boş bıraktıklarınız her kayıtta olduğu gibi kalır. Tutarlar <b>kişi başı</b>dır. Maaşın kendisi buradan değişmez.</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="form-label">Prim (₺)</label><input name="bonus" inputmode="decimal" placeholder="Değiştirme" class="form-input text-right"></div>
+                    <div><label class="form-label">Avans (₺)</label><input name="advance" inputmode="decimal" placeholder="Değiştirme" class="form-input text-right"></div>
+                    <div><label class="form-label">Kesinti (₺)</label><input name="deduction" inputmode="decimal" placeholder="Değiştirme" class="form-input text-right"></div>
+                    <div><label class="form-label">Fiilen ödenen (₺)</label><input name="paid_amount" inputmode="decimal" placeholder="Değiştirme" class="form-input text-right"></div>
+                    <div><label class="form-label">Ödeme yöntemi</label>
+                        <x-ui-select name="payment_method" :search="false" placeholder="Değiştirme"><option value="">Değiştirme</option>@foreach (\App\Models\SalaryPayment::METHODS as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</x-ui-select></div>
+                    <div><label class="form-label">Ödeme tarihi</label><x-date-input name="paid_at" /></div>
+                    <div class="col-span-2"><label class="form-label">Açıklama</label><input name="note" placeholder="Değiştirme" class="form-input"></div>
+                </div>
+                <div class="flex justify-end gap-2"><button type="button" @click="bulkEdit = false" class="btn-secondary">Vazgeç</button><button class="btn-success"><i class="fa-solid fa-floppy-disk"></i> Seçili kayıtlara uygula</button></div>
+            </form>
+        </div>
+        </template>
+    </template>
+
+    @can('delete')
+    {{-- Toplu silme onayı (maaşlar) --}}
+    <template x-teleport="body">
+        <template x-if="bulkDelete">
+        <div x-show="bulkDelete" @click.self="bulkDelete = false" x-transition.opacity class="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+            <form method="POST" action="{{ route('payments.bulk-destroy') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-xl text-left">
+                @csrf
+                <template x-for="id in sel" :key="id"><input type="hidden" name="ids[]" :value="id"></template>
+                <div class="mb-3 flex items-center gap-3">
+                    <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-50 text-red-600"><i class="fa-solid fa-trash"></i></span>
+                    <h3 class="text-base font-semibold text-slate-900">Maaş kayıtlarını sil</h3>
+                </div>
+                <p class="text-sm text-slate-600">Seçili <b x-text="sel.length"></b> bordro satırı kalıcı olarak silinecek. Bu işlem geri alınamaz.</p>
+                <div class="mt-4 flex justify-end gap-2"><button type="button" @click="bulkDelete = false" class="btn-secondary">Vazgeç</button><button class="btn-danger"><i class="fa-solid fa-trash"></i> Evet, sil</button></div>
+            </form>
+        </div>
+        </template>
+    </template>
+    @endcan
+    @endcan
     </div>
 
     @if ($missing->isNotEmpty() && $payrollTotals['count'] > 0)
