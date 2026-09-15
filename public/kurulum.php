@@ -16,8 +16,11 @@ function layout(string $title, string $body): void {
 <style>body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f4f6fb;color:#0f172a;margin:0;padding:32px 16px}.box{max-width:720px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:28px}h1{font-size:20px;margin:0 0 6px}p{color:#475569;line-height:1.5}label{display:block;font-size:12px;font-weight:600;color:#475569;margin:14px 0 4px}input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-size:14px}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.btn{background:#1e6ff2;color:#fff;border:0;border-radius:10px;padding:12px 18px;font-weight:600;font-size:14px;cursor:pointer;margin-top:20px}.ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;padding:12px 14px;border-radius:10px}.err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:12px 14px;border-radius:10px;white-space:pre-wrap}h2{font-size:14px;margin:26px 0 0;color:#1e6ff2;text-transform:uppercase;letter-spacing:.08em}code{background:#f1f5f9;padding:2px 6px;border-radius:6px}small{color:#64748b}</style></head><body><div class="box">'.$body.'</div></body></html>';
 }
 
-if (is_file($envFile) && ! isset($_GET['zorla'])) {
-    layout('Kurulum tamamlanmış', '<h1>Kurulum zaten yapılmış</h1><p><code>.env</code> dosyası mevcut. Güvenlik için bu sayfa devre dışı. Yeniden kurmak için sunucudaki <code>.env</code> dosyasını silin.</p><p><a href="/">Uygulamaya git →</a></p>');
+// GÜVENLİK: .env varsa kurulum HER ZAMAN kapalıdır (atlatma parametresi yok).
+// Yeniden kurmak gerekirse önce sunucudaki .env dosyasını silin.
+if (is_file($envFile)) {
+    http_response_code(403);
+    layout('Kurulum kapalı', '<h1>Kurulum zaten yapılmış</h1><p><code>.env</code> dosyası mevcut olduğu için bu sayfa devre dışı.</p><p>Yeniden kurmak gerekirse sunucudaki <code>.env</code> dosyasını silip bu sayfayı tekrar açın. Kurulum bittiyse bu dosyayı sunucudan silmeniz önerilir.</p><p><a href="/">Uygulamaya git →</a></p>');
     exit;
 }
 

@@ -30,3 +30,6 @@ GitHub'a push edildikçe cPanel > Git Version Control > Manage > **Update from R
 ## Notlar
 - `.env` asla repoya girmez; sunucuda kurulum sayfası oluşturur.
 - Sorun olursa `personel/storage/logs/laravel.log` dosyasına bakın.
+
+## Güvenlik
+Kurulum bittikten sonra `public/kurulum.php` dosyasını sunucudan **silin** (cPanel > File Manager). Dosya `.env` varken kendini kapatır, ama depo herkese açık olduğu için tamamen kaldırmak en güvenlisidir. Yeniden kurulum gerekirse dosyayı GitHub'dan tekrar indirip yükleyebilirsiniz.
