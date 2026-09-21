@@ -65,6 +65,9 @@ php artisan test
 - Durum (Bekliyor/Ödendi) satırdaki kompakt açılır menüden değiştirilir (`x-ui-select` + `:submit`, `.status-select` sınıfı renkli nokta verir): `POST /expenses/{id}/status`, `POST /payments/{id}/status`. Ayrı "Ödendi" butonu yok.
 - Renk semantiği: birincil mavi #0284c7 (`brand-600`), onay/kaydet/ödendi YEŞİL (`.btn-success`, `.btn-icon-primary`), sil KIRMIZI (`.btn-danger`, `.btn-icon-danger`), düzenle koyu gri (`.btn-icon`).
 
+## m² Hesaplayıcı
+- `/m2-hesaplayici` (`calculator`, `Route::view`, tüm roller görür): ofis temizlik fiyatı. Kural `App\Support\M2Pricing`: 100 m²'ye kadar 100 ₺/m², 100 m² üstü 80 ₺/m² (101 m² → 8.080 ₺; kullanıcı böyle istedi), 50 m² altı yine 100 ₺ ama "küçük alan" rozeti. Hesap sayfada Alpine ile yapılır; sabitler Blade'e PHP sınıfından basılır, fiyat değişince sadece sınıfı düzenle.
+
 ## İzin & devamsızlık
 - `leaves` tablosu: type (annual, unpaid, marriage, birth, death, sick, absence), leave_year, start/end/return_date, days (iş günü, hafta sonu hariç otomatik ama elle değiştirilebilir), deduct_annual.
 - Yıllık hak `employees.annual_leave_days` (varsayılan 14, kişi bazında değişir). Bakiye `Employee::leaveBalance($year)` = hak − yıllık izinden düşülen günler. Hak yetmezse `leave_warning` ile geri döner; `force=1` ile "yine de ver".

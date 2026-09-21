@@ -7,6 +7,7 @@
         ['route' => 'leaves.index', 'match' => 'leaves.*', 'icon' => 'fa-calendar-days', 'label' => 'İzinler', 'desc' => 'İzin, rapor, devamsızlık', 'tone' => 'text-amber-600 bg-amber-50'],
         ['route' => 'reviews.index', 'match' => 'reviews.*', 'icon' => 'fa-star', 'label' => 'Performans', 'desc' => 'Aylık değerlendirme', 'tone' => 'text-orange-500 bg-orange-50'],
         ['route' => 'reports.index', 'match' => 'reports.*', 'icon' => 'fa-chart-column', 'label' => 'Raporlar', 'desc' => 'Aylık ve yıllık özet', 'tone' => 'text-sky-600 bg-sky-50'],
+        ['route' => 'calculator', 'match' => 'calculator', 'icon' => 'fa-ruler-combined', 'label' => 'm² Hesaplayıcı', 'desc' => 'Ofis temizlik fiyatı', 'tone' => 'text-rose-600 bg-rose-50'],
         ['route' => 'settings.edit', 'match' => 'settings.*|users.*', 'icon' => 'fa-sliders', 'label' => 'Ayarlar', 'desc' => 'Hesap, ücretler, kullanıcılar', 'tone' => 'text-slate-600 bg-slate-100'],
     ];
     $current = collect($nav)->first(fn ($i) => request()->routeIs(...explode('|', $i['match'])));

@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('izinler', LeaveController::class)->names('leaves')->parameters(['izinler' => 'leave'])->only(['index']);
     Route::get('/izinler/{leave}/yazdir', [LeaveController::class, 'print'])->name('leaves.print');
     Route::get('/raporlar', [ReportController::class, 'index'])->name('reports.index');
+    Route::view('/m2-hesaplayici', 'calculator.index')->name('calculator');
     Route::get('/ayarlar', [SettingController::class, 'edit'])->name('settings.edit');
     Route::put('/ayarlar/hesap', [SettingController::class, 'account'])->name('settings.account');
 
