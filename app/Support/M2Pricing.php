@@ -2,34 +2,40 @@
 
 namespace App\Support;
 
+use App\Models\Setting;
+
 /**
- * Temizlik fiyatı (m² başına):
- *  - 100 m²'ye kadar 100 ₺/m²  (50 m² → 5.000 ₺, 100 m² → 10.000 ₺)
- *  - 100 m² üstü 80 ₺/m²       (101 m² → 8.080 ₺)
- *  - 50 m² altı da 100 ₺/m² ama "küçük alan" diye işaretlenir.
+ * Ofis temizlik fiyatı (m² başına). Tutarlar Ayarlar > m² Fiyatları'ndan gelir:
+ *  - büyük alan sınırına kadar (varsayılan 100 m²) standart fiyat (100 ₺/m²)
+ *  - sınır üstü büyük alan fiyatı (80 ₺/m²)
+ *  - küçük alan sınırı altı (50 m²) yine standart fiyat, sadece "küçük alan" diye işaretlenir.
  */
 class M2Pricing
 {
-    public const SMALL_LIMIT = 50;
+    /** @return array{rate: float, large_rate: float, large_limit: float, small_limit: float} */
+    public static function rates(): array
+    {
+        return [
+            'rate' => Setting::amount('m2_rate'),
+            'large_rate' => Setting::amount('m2_large_rate'),
+            'large_limit' => Setting::amount('m2_large_limit'),
+            'small_limit' => Setting::amount('m2_small_limit'),
+        ];
+    }
 
-    public const LARGE_LIMIT = 100;
-
-    public const RATE = 100;
-
-    public const LARGE_RATE = 80;
-
-    /** @return array{m2: float, rate: int, total: float, small: bool, large: bool} */
+    /** @return array{m2: float, rate: float, total: float, small: bool, large: bool} */
     public static function calculate(float $m2): array
     {
+        $r = self::rates();
         $m2 = max(0, $m2);
-        $large = $m2 > self::LARGE_LIMIT;
-        $rate = $large ? self::LARGE_RATE : self::RATE;
+        $large = $m2 > $r['large_limit'];
+        $rate = $large ? $r['large_rate'] : $r['rate'];
 
         return [
             'm2' => $m2,
             'rate' => $rate,
             'total' => round($m2 * $rate, 2),
-            'small' => $m2 > 0 && $m2 < self::SMALL_LIMIT,
+            'small' => $m2 > 0 && $m2 < $r['small_limit'],
             'large' => $large,
         ];
     }

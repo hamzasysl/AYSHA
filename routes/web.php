@@ -87,6 +87,7 @@ Route::middleware('auth')->group(function () {
     // ---- Ayarlar ve kullanıcılar
     Route::middleware('can:manage')->group(function () {
         Route::put('/ayarlar', [SettingController::class, 'update'])->name('settings.update');
+        Route::put('/ayarlar/m2-fiyatlari', [SettingController::class, 'pricing'])->name('settings.pricing');
         Route::post('/ayarlar/kullanicilar', [UserController::class, 'store'])->name('users.store');
         Route::put('/ayarlar/kullanicilar/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/ayarlar/kullanicilar/{user}', [UserController::class, 'destroy'])->name('users.destroy');

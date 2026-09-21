@@ -1,13 +1,21 @@
-@php $p = \App\Support\M2Pricing::class; @endphp
+@php
+    $r = \App\Support\M2Pricing::rates();
+    $n = fn ($v) => rtrim(rtrim(number_format((float) $v, 2, ',', '.'), '0'), ',');
+    $examples = collect([$r['small_limit'], $r['large_limit'], $r['large_limit'] + 1])->filter(fn ($v) => $v > 0)->unique()
+        ->map(fn ($v) => [$n($v), \App\Support\M2Pricing::calculate($v)['total']]);
+@endphp
 <x-app-layout title="m² Hesaplayıcı" subtitle="Ofis temizlik fiyatı: metrekareyi yazın, tutar çıksın">
+    @can('manage')
+        <x-slot:actions><a href="{{ route('settings.edit', ['tab' => 'pricing']) }}" class="btn-secondary btn-sm"><i class="fa-solid fa-sliders"></i> Fiyatları düzenle</a></x-slot:actions>
+    @endcan
     <div x-data="{
             m2: '',
             price: '',
             get n() { return Math.max(0, parseMoney(this.m2)); },
             get manual() { return parseMoney(this.price) > 0; },
-            get large() { return this.n > {{ $p::LARGE_LIMIT }}; },
-            get small() { return this.n > 0 && this.n < {{ $p::SMALL_LIMIT }}; },
-            get autoRate() { return this.large ? {{ $p::LARGE_RATE }} : {{ $p::RATE }}; },
+            get large() { return this.n > {{ $r['large_limit'] }}; },
+            get small() { return this.n > 0 && this.n < {{ $r['small_limit'] }}; },
+            get autoRate() { return this.large ? {{ $r['large_rate'] }} : {{ $r['rate'] }}; },
             get rate() { return this.manual ? parseMoney(this.price) : this.autoRate; },
             get total() { return Math.round(this.n * this.rate * 100) / 100; },
          }" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -33,9 +41,9 @@
                     <span x-text="n.toLocaleString('tr-TR')"></span> m² × <span x-text="rate.toLocaleString('tr-TR')"></span> ₺
                 </div>
                 <div class="mt-3 flex flex-wrap gap-2">
-                    <span x-show="small" x-cloak class="badge-warn"><i class="fa-solid fa-circle-exclamation"></i> 50 m² altı küçük alan</span>
+                    <span x-show="small" x-cloak class="badge-warn"><i class="fa-solid fa-circle-exclamation"></i> {{ $n($r['small_limit']) }} m² altı küçük alan</span>
                     <span x-show="manual" x-cloak class="badge"><i class="fa-solid fa-pen"></i> Elle girilen fiyat</span>
-                    <span x-show="large && !manual" x-cloak class="badge-info"><i class="fa-solid fa-tag"></i> 100 m² üstü indirimli fiyat</span>
+                    <span x-show="large && !manual" x-cloak class="badge-info"><i class="fa-solid fa-tag"></i> {{ $n($r['large_limit']) }} m² üstü indirimli fiyat</span>
                 </div>
             </div>
         </div>
@@ -43,16 +51,16 @@
         <div class="card p-6">
             <h2 class="font-semibold text-slate-900"><i class="fa-solid fa-list-ol"></i>Fiyat kuralı</h2>
             <ul class="mt-4 space-y-3 text-sm">
-                <li class="flex justify-between gap-3" :class="small ? 'font-semibold text-slate-900' : 'text-slate-600'"><span>50 m² altı</span><span>{{ $p::RATE }} ₺ / m²</span></li>
-                <li class="flex justify-between gap-3" :class="n >= {{ $p::SMALL_LIMIT }} && !large ? 'font-semibold text-slate-900' : 'text-slate-600'"><span>50 – 100 m²</span><span>{{ $p::RATE }} ₺ / m²</span></li>
-                <li class="flex justify-between gap-3" :class="large ? 'font-semibold text-slate-900' : 'text-slate-600'"><span>100 m² üstü</span><span>{{ $p::LARGE_RATE }} ₺ / m²</span></li>
+                <li class="flex justify-between gap-3" :class="small ? 'font-semibold text-slate-900' : 'text-slate-600'"><span>{{ $n($r['small_limit']) }} m² altı</span><span>{{ $n($r['rate']) }} ₺ / m²</span></li>
+                <li class="flex justify-between gap-3" :class="n >= {{ $r['small_limit'] }} && !large ? 'font-semibold text-slate-900' : 'text-slate-600'"><span>{{ $n($r['small_limit']) }} – {{ $n($r['large_limit']) }} m²</span><span>{{ $n($r['rate']) }} ₺ / m²</span></li>
+                <li class="flex justify-between gap-3" :class="large ? 'font-semibold text-slate-900' : 'text-slate-600'"><span>{{ $n($r['large_limit']) }} m² üstü</span><span>{{ $n($r['large_rate']) }} ₺ / m²</span></li>
             </ul>
             <div class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
                 <div class="mb-1.5 font-medium text-slate-600">Örnek</div>
                 <ul class="space-y-1">
-                    <li class="flex justify-between gap-3"><span>50 m²</span><span>5.000 ₺</span></li>
-                    <li class="flex justify-between gap-3"><span>100 m²</span><span>10.000 ₺</span></li>
-                    <li class="flex justify-between gap-3"><span>101 m²</span><span>8.080 ₺</span></li>
+                    @foreach ($examples as [$m, $total])
+                        <li class="flex justify-between gap-3"><span>{{ $m }} m²</span><span>@money($total)</span></li>
+                    @endforeach
                 </ul>
             </div>
         </div>
