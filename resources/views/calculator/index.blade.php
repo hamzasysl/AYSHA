@@ -47,7 +47,14 @@
                 <li class="flex justify-between gap-3" :class="n >= {{ $p::SMALL_LIMIT }} && !large ? 'font-semibold text-slate-900' : 'text-slate-600'"><span>50 – 100 m²</span><span>{{ $p::RATE }} ₺ / m²</span></li>
                 <li class="flex justify-between gap-3" :class="large ? 'font-semibold text-slate-900' : 'text-slate-600'"><span>100 m² üstü</span><span>{{ $p::LARGE_RATE }} ₺ / m²</span></li>
             </ul>
-            <p class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">Örnek: 50 m² → 5.000 ₺ · 100 m² → 10.000 ₺ · 101 m² → 8.080 ₺</p>
+            <div class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                <div class="mb-1.5 font-medium text-slate-600">Örnek</div>
+                <ul class="space-y-1">
+                    <li class="flex justify-between gap-3"><span>50 m²</span><span>5.000 ₺</span></li>
+                    <li class="flex justify-between gap-3"><span>100 m²</span><span>10.000 ₺</span></li>
+                    <li class="flex justify-between gap-3"><span>101 m²</span><span>8.080 ₺</span></li>
+                </ul>
+            </div>
         </div>
     </div>
 </x-app-layout>
