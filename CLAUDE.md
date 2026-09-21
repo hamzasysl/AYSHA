@@ -66,7 +66,7 @@ php artisan test
 - Renk semantiği: birincil mavi #0284c7 (`brand-600`), onay/kaydet/ödendi YEŞİL (`.btn-success`, `.btn-icon-primary`), sil KIRMIZI (`.btn-danger`, `.btn-icon-danger`), düzenle koyu gri (`.btn-icon`).
 
 ## m² Hesaplayıcı
-- `/m2-hesaplayici` (`calculator`, `Route::view`, tüm roller görür): ofis temizlik fiyatı. Kural `App\Support\M2Pricing`: 100 m²'ye kadar 100 ₺/m², 100 m² üstü 80 ₺/m² (101 m² → 8.080 ₺; kullanıcı böyle istedi), 50 m² altı yine 100 ₺ ama "küçük alan" rozeti. Hesap sayfada Alpine ile yapılır; sabitler Blade'e PHP sınıfından basılır, fiyat değişince sadece sınıfı düzenle. Sayfada "m² başı fiyat" alanı elle doldurulursa kuralı ezer (boşsa otomatik, placeholder otomatik fiyatı gösterir).
+- `/m2-hesaplayici` (`calculator`, `Route::view`, tüm roller görür): ofis temizlik fiyatı. Tutarlar Ayarlar > **m² Fiyatları** sekmesinden (`settings.pricing`, `Setting` anahtarları `m2_rate` 100, `m2_large_rate` 80, `m2_large_limit` 100, `m2_small_limit` 50; migration gerekmez). Kural `App\Support\M2Pricing::rates()/calculate()`: sınıra kadar standart fiyat, sınır üstü büyük alan fiyatı (101 m² → 8.080 ₺; kullanıcı böyle istedi), küçük alan sınırı altı yine standart fiyat ama "küçük alan" rozeti. Sayfada "m² başı fiyat" elle doldurulursa kuralı ezer. Sayfadaki sınır/örnek metinleri ayarlardan üretilir; sabit sayı yazma.
 
 ## İzin & devamsızlık
 - `leaves` tablosu: type (annual, unpaid, marriage, birth, death, sick, absence), leave_year, start/end/return_date, days (iş günü, hafta sonu hariç otomatik ama elle değiştirilebilir), deduct_annual.
