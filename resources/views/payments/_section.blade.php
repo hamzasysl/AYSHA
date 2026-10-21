@@ -15,7 +15,7 @@
                     <div x-data="{ open: false }">
                         <button @click="open = true" class="btn-success w-full"><i class="fa-solid fa-check-double"></i> Tümünü ödendi işaretle</button>
                         <template x-teleport="body">
-                            <div x-show="open" @click.self="open = false" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                            <div x-show="open" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                                 <form method="POST" action="{{ route('payments.mark-all-paid') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-sm rounded-xl bg-white p-6 shadow-xl space-y-4">
                                     @csrf <input type="hidden" name="year" value="{{ $year }}"><input type="hidden" name="month" value="{{ $month }}">
                                     <h3 class="text-lg font-semibold">Toplu ödeme</h3>
@@ -121,7 +121,7 @@
                             {{-- Düzenleme modalı --}}
                             <template x-teleport="body">
                                 <template x-if="edit">
-                                <div x-show="edit" @click.self="edit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                                <div x-show="edit" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                                     <form method="POST" action="{{ route('payments.update', $p) }}"
                                           x-data="{ base: {{ (float) $p->base_salary }}, bonus: {{ (float) $p->bonus }}, advance: {{ (float) $p->advance }}, deduction: {{ (float) $p->deduction }}, paid: {{ (float) $p->paid_amount }},
                                                     get net() { return parseMoney(this.base) + parseMoney(this.bonus) - parseMoney(this.advance) - parseMoney(this.deduction); } }"
@@ -218,7 +218,7 @@
     {{-- Toplu düzenleme penceresi (maaşlar) --}}
     <template x-teleport="body">
         <template x-if="bulkEdit">
-        <div x-show="bulkEdit" @click.self="bulkEdit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div x-show="bulkEdit" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <form method="POST" action="{{ route('payments.bulk-update') }}"
                   class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl text-left">
                 @csrf
@@ -248,7 +248,7 @@
     {{-- Toplu silme onayı (maaşlar) --}}
     <template x-teleport="body">
         <template x-if="bulkDelete">
-        <div x-show="bulkDelete" @click.self="bulkDelete = false" x-transition.opacity class="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+        <div x-show="bulkDelete" x-transition.opacity class="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
             <form method="POST" action="{{ route('payments.bulk-destroy') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-xl text-left">
                 @csrf
                 <template x-for="id in sel" :key="id"><input type="hidden" name="ids[]" :value="id"></template>

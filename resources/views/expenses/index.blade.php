@@ -22,7 +22,7 @@
         <div x-data="{ open: false }">
             <button @click="open = true" class="btn-secondary btn-sm" title="Garanti toplu maaş ödeme dosyası (xlsx)"><i class="fa-solid fa-file-excel"></i> Banka Dosyası</button>
             <template x-teleport="body">
-                <div x-show="open" @click.self="open = false" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <div x-show="open" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <form method="GET" action="{{ route('payments.bank-file') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-pop">
                         <input type="hidden" name="year" value="{{ $year }}"><input type="hidden" name="month" value="{{ $month }}">
                         <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Garanti maaş dosyası</h3><button type="button" @click="open = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
@@ -40,7 +40,7 @@
         <div x-data="{ open: false }">
             <button @click="open = true" class="btn-secondary btn-sm" title="Tüm aktif personele bu ayın yemek ücreti ve yol parasını aç"><i class="fa-solid fa-wand-magic-sparkles"></i> Yemek &amp; Yol Oluştur</button>
             <template x-teleport="body">
-                <div x-show="open" @click.self="open = false" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <div x-show="open" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <form method="POST" action="{{ route('expenses.generate-allowances') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-pop">
                         @csrf <input type="hidden" name="year" value="{{ $year }}"><input type="hidden" name="month" value="{{ $month }}">
                         <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">{{ $label }} yemek &amp; yol</h3><button type="button" @click="open = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
@@ -58,7 +58,7 @@
         <div x-data="{ open: {{ $errors->any() && old('_form') === 'expense-create' ? 'true' : 'false' }} }">
             <button @click="open = true" class="btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Yeni Kayıt</button>
             <template x-teleport="body">
-                <div x-show="open" @click.self="open = false" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <div x-show="open" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <form method="POST" action="{{ route('expenses.store') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl">
                         @csrf <input type="hidden" name="_form" value="expense-create">
                         <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Yeni gider / ödeme kaydı</h3><button type="button" @click="open = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
@@ -197,7 +197,7 @@
                                 {{-- Düzenleme modalı --}}
                                 <template x-teleport="body">
                                     <template x-if="edit">
-                                    <div x-show="edit" @click.self="edit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                                    <div x-show="edit" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                                         <form method="POST" action="{{ route('expenses.update', $x) }}"
                                               x-data="{ amount: {{ (float) $x->amount }}, deduction: {{ (float) $x->deduction }}, paid: {{ $x->paid_amount !== null ? (float) $x->paid_amount : $x->net_amount }}, get net() { return Math.max(0, parseMoney(this.amount) - parseMoney(this.deduction)); }, get over() { return Math.max(0, Math.round((parseMoney(this.paid) - this.net) * 100) / 100); } }"
                                               class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl text-left">
@@ -285,7 +285,7 @@
         {{-- Toplu düzenleme penceresi: boş bırakılan alanlar değişmez --}}
         <template x-teleport="body">
             <template x-if="bulkEdit">
-            <div x-show="bulkEdit" @click.self="bulkEdit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div x-show="bulkEdit" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                 <form method="POST" action="{{ route('expenses.bulk-update') }}"
                       class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl text-left">
                     @csrf
@@ -319,7 +319,7 @@
         {{-- Toplu silme onayı --}}
         <template x-teleport="body">
             <template x-if="bulkDelete">
-            <div x-show="bulkDelete" @click.self="bulkDelete = false" x-transition.opacity class="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+            <div x-show="bulkDelete" x-transition.opacity class="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
                 <form method="POST" action="{{ route('expenses.bulk-destroy') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-xl text-left">
                     @csrf
                     <template x-for="id in sel" :key="id"><input type="hidden" name="ids[]" :value="id"></template>

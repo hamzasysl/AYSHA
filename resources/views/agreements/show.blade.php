@@ -12,7 +12,7 @@
                 <button type="button" @click="edit = true" class="btn-primary btn-sm"><i class="fa-solid fa-pen"></i> Düzenle</button>
                 <template x-teleport="body">
                     <template x-if="edit">
-                    <div x-show="edit" @click.self="edit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div x-show="edit" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                         <form method="POST" action="{{ route('agreements.update', $agreement) }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-2xl space-y-4 rounded-xl bg-white p-6 shadow-pop text-left">
                             @csrf @method('PATCH')
                             <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Anlaşmayı düzenle</h3><button type="button" @click="edit = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
