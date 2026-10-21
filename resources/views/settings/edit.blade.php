@@ -4,7 +4,7 @@
         {{-- Sol menü --}}
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <nav class="card p-2">
-                @php $tabs = ['allowances' => ['fa-utensils', 'Yemek & Yol Ücretleri', 'Aylık standart tutarlar'], 'pricing' => ['fa-ruler-combined', 'Fiyatlar & KDV', 'm² fiyatı ve KDV oranı'], 'company' => ['fa-building-columns', 'Şirket & Marka', 'Görünen ad ve banka bilgileri'], 'account' => ['fa-user-shield', 'Hesap', 'Ad, kullanıcı adı, şifre'], 'users' => ['fa-users-gear', 'Kullanıcılar', 'Sisteme giriş yapabilenler'], 'categories' => ['fa-tags', 'Gider Kategorileri', 'Muhasebedeki kategoriler'], 'lists' => ['fa-list-check', 'Listeler', 'Görevler, bankalar, izin türleri'], 'system' => ['fa-server', 'Sistem', 'Güncelleme ve önbellek']]; if (! $manager) { $tabs = ['account' => $tabs['account']]; } @endphp
+                @php $tabs = ['allowances' => ['fa-utensils', 'Yemek & Yol Ücretleri', 'Aylık standart tutarlar'], 'pricing' => ['fa-ruler-combined', 'Fiyatlar & KDV', 'm² fiyatı ve KDV oranı'], 'company' => ['fa-building-columns', 'Şirket & Marka', 'Görünen ad ve banka bilgileri'], 'account' => ['fa-user-shield', 'Hesap', 'Ad, kullanıcı adı, şifre'], 'users' => ['fa-users-gear', 'Kullanıcılar', 'Sisteme giriş yapabilenler'], 'categories' => ['fa-tags', 'Gider Kategorileri', 'Muhasebedeki kategoriler'], 'lists' => ['fa-list-check', 'Listeler', 'Görevler, bankalar, izin türleri'], 'system' => ['fa-server', 'Sistem', 'Bakım ve güncelleme']]; if (! $manager) { $tabs = ['account' => $tabs['account']]; } @endphp
                 @foreach ($tabs as $key => [$icon, $label, $desc])
                     <button type="button" @click="tab = '{{ $key }}'" :class="tab === '{{ $key }}' ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-50'" class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition">
                         <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white"><i class="fa-solid {{ $icon }} text-sm" :class="tab === '{{ $key }}' ? 'text-brand-600' : 'text-slate-400'"></i></span>
@@ -19,8 +19,7 @@
                 <div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                     <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
                     <div class="flex-1">
-                        <b>{{ count($pendingMigrations) }} veritabanı güncellemesi bekliyor.</b>
-                        Yeni sürüm yüklendi ama veritabanı henüz güncellenmedi; bazı sayfalar hata verebilir.
+                        <b>{{ count($pendingMigrations) }} güncelleme bekliyor.</b>
                         <button type="button" @click="tab = 'system'" class="font-semibold underline">Sistem sekmesinden uygulayın →</button>
                     </div>
                 </div>

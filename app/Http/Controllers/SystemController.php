@@ -48,26 +48,32 @@ class SystemController extends Controller
     public function migrate(): RedirectResponse
     {
         try {
+            $before = count(self::status()['pending']);
             Artisan::call('migrate', ['--force' => true]);
-            $out = trim(preg_replace('/\s+/', ' ', Artisan::output()));
+            Artisan::output();
             $this->flushCaches();
 
+            // Ekrana teknik ayrıntı (dosya adı, hata metni) yazma; ayrıntı log'a düşer.
             return redirect()->route('settings.edit', ['tab' => 'system'])
-                ->with('success', 'Veritabanı güncellemesi tamamlandı. '.($out !== '' ? mb_substr($out, 0, 300) : 'Yeni güncelleme yoktu.'));
+                ->with('success', $before > 0 ? 'Güncellemeler uygulandı.' : 'Her şey zaten güncel.');
         } catch (\Throwable $e) {
-            return redirect()->route('settings.edit', ['tab' => 'system'])->with('error', 'Güncelleme başarısız: '.$e->getMessage());
+            report($e);
+
+            return redirect()->route('settings.edit', ['tab' => 'system'])->with('error', 'Güncelleme tamamlanamadı, lütfen tekrar deneyin.');
         }
     }
 
-    /** Sadece önbellek temizliği. */
+    /** Sadece görünüm/önbellek tazeleme. */
     public function clearCache(): RedirectResponse
     {
         try {
             $this->flushCaches();
 
-            return redirect()->route('settings.edit', ['tab' => 'system'])->with('success', 'Önbellek temizlendi.');
+            return redirect()->route('settings.edit', ['tab' => 'system'])->with('success', 'Sayfalar yenilendi.');
         } catch (\Throwable $e) {
-            return redirect()->route('settings.edit', ['tab' => 'system'])->with('error', 'Temizlenemedi: '.$e->getMessage());
+            report($e);
+
+            return redirect()->route('settings.edit', ['tab' => 'system'])->with('error', 'Yenilenemedi, lütfen tekrar deneyin.');
         }
     }
 

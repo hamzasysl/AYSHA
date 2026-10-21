@@ -1,8 +1,8 @@
 {{--
-    Bakım sayfası: Ayarlar sayfası herhangi bir nedenle açılmazsa (örn. veritabanı
-    güncellemesi yapılmadığı için) güncelleme düğmelerine buradan erişilir.
+    Yedek bakım sayfası: Ayarlar sayfası herhangi bir nedenle açılmazsa
+    güncelleme düğmelerine buradan erişilir.
 --}}
-<x-app-layout title="Sistem" subtitle="Güncelleme ve önbellek" section="Ayarlar">
+<x-app-layout title="Sistem" subtitle="Bakım ve güncelleme" section="Ayarlar">
     <x-slot:actions>
         <a href="{{ route('settings.edit', ['tab' => 'system']) }}" class="btn-secondary btn-sm"><i class="fa-solid fa-sliders"></i> Ayarlar</a>
     </x-slot:actions>

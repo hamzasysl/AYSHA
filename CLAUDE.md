@@ -15,7 +15,7 @@ aylık bordro takibi (ödendi / kısmi / bekliyor), performans değerlendirmeler
 ## Dağıtım (cPanel, Git, terminal yok)
 - Bkz. `KURULUM.md`. `vendor/` ve `public/build/` REPOYA DAHİL (sunucuda composer/npm yok): kod değişince `npm run build` yap ve vendor değişiklikleriyle birlikte commit et. `composer.json` platform php 8.3.0 (sunucu PHP 8.3); 8.4 isteyen paket ekleme.
 - Gerçek veri sunucuya `database/veri.enc` ile taşınır (AES-256-CBC + PBKDF2 + HMAC, `php artisan aysha:veri-paketle --sifre=...`); şifre kullanıcıda, repoya/memory'ye yazma. Veri değişince yeniden paketle ve commit et.
-- Sunucuda terminal yok: deploy sonrası migration ve önbellek temizliği **Ayarlar > Sistem** sekmesinden ya da doğrudan `/ayarlar/sistem` sayfasından (`system.index`, kartlar `settings/_system.blade.php` partial'ı) yapılır (`SystemController`, `can:manage`). Yeni migration eklediğinde kullanıcıya bu düğmeye basmasını söyle.
+- Sunucuda terminal yok: deploy sonrası migration ve önbellek temizliği **Ayarlar > Sistem** sekmesinden ya da doğrudan `/ayarlar/sistem` sayfasından (`system.index`, kartlar `settings/_system.blade.php` partial'ı) yapılır (`SystemController`, `can:manage`). Yeni migration eklediğinde kullanıcıya bu düğmeye basmasını söyle (ekranda değil, sohbette).
 - ÖNEMLİ: Ayarlar sayfası yeni bir tabloya/kolona bağımlı OLMAMALI — migration çalıştırma düğmesi orada olduğu için sayfa patlarsa kullanıcı kilitleniyor. Yeni tablo okuyacaksan `Schema::hasTable()` ile koru (örn. `login_logs`), ayrıca `/ayarlar/sistem` yedek sayfası her zaman ayakta kalmalı. Bekleyen migration varsa ayarlar sayfasının üstünde sarı uyarı çıkar.
 - Blade dosyasına yeni bir Tailwind sınıfı yazdıysan `npm run build` ZORUNLU: Tailwind v4 sınıfları derleme anında blade'lerden tarar, build almazsan sınıf CSS'te olmaz (sessizce çalışmaz).
 - `.cpanel.yml` deploy görevleri, `public/kurulum.php` tek seferlik tarayıcı kurulumu (.env yoksa çalışır, bitince `.tamam` olur). `.env` ve `*.sql` asla commit edilmez. Repo PUBLIC: gerçek veri (dump) repoya girmez.
@@ -108,5 +108,6 @@ php artisan test
 - DemoSeeder sahte veri üretir; canlı DB'de gerçek 25 personel var — demo'yu gerçek verinin üstüne çalıştırma.
 
 ## Kurallar
+- Ekranda TEKNİK/ALTYAPI notu gösterme: cPanel, Git, deploy, migration, önbellek, sunucu, dosya adı, ham hata metni vb. Bu yazılım müşteriye teslim edildi; kullanıcı sade ve iş diliyle konuşan ekranlar görmeli. Hata ayrıntısı `report($e)` ile log'a düşsün, ekrana "işlem tamamlanamadı, tekrar deneyin" gibi sade mesaj yaz. (Kullanıcı 2026-10-21'de bu notları kaldırttı.)
 - UI dili Türkçe. Görsel dil: beyaz zemin (#f4f7fb), brand mavisi vurgular, rounded-full filtre chip'leri, Font Awesome ikonlar; her buton/başlıkta ikon kullan.
 - SQLite'ta da çalışan sorgular yaz (testler SQLite): `HAVING` without `GROUP BY`, `CONCAT` vb. kullanma.

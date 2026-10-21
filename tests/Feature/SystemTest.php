@@ -15,8 +15,8 @@ class SystemTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)->get('/ayarlar?tab=system')->assertOk()
-            ->assertSee('Güncelleme sonrası')
-            ->assertSee('Veritabanı güncel')
+            ->assertSee('Bakım')
+            ->assertSee('Her şey güncel')
             ->assertDontSee('Sunucu bilgileri');
 
         $this->actingAs($admin)->post('/ayarlar/sistem/guncelle')
@@ -32,7 +32,7 @@ class SystemTest extends TestCase
             $u = User::factory()->create(['role' => $role]);
             $this->actingAs($u)->post('/ayarlar/sistem/guncelle')->assertForbidden();
             $this->actingAs($u)->post('/ayarlar/sistem/onbellek')->assertForbidden();
-            $this->actingAs($u)->get('/ayarlar')->assertOk()->assertDontSee('Güncelleme sonrası');
+            $this->actingAs($u)->get('/ayarlar')->assertOk()->assertDontSee('Güncellemeleri uygula');
         }
     }
 
