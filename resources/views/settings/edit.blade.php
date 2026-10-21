@@ -4,7 +4,7 @@
         {{-- Sol menü --}}
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <nav class="card p-2">
-                @php $tabs = ['allowances' => ['fa-utensils', 'Yemek & Yol Ücretleri', 'Aylık standart tutarlar'], 'pricing' => ['fa-ruler-combined', 'Fiyatlar & KDV', 'm² fiyatı ve KDV oranı'], 'company' => ['fa-building-columns', 'Şirket & Banka', 'Garanti maaş dosyası bilgileri'], 'account' => ['fa-user-shield', 'Hesap', 'Ad, kullanıcı adı, şifre'], 'users' => ['fa-users-gear', 'Kullanıcılar', 'Sisteme giriş yapabilenler'], 'categories' => ['fa-tags', 'Gider Kategorileri', 'Muhasebedeki kategoriler'], 'lists' => ['fa-list-check', 'Listeler', 'Görevler, bankalar, izin türleri'], 'logins' => ['fa-clock-rotate-left', 'Oturum Geçmişi', 'Kim nereden girmiş'], 'system' => ['fa-server', 'Sistem', 'Güncelleme ve önbellek']]; if (! $manager) { $tabs = ['account' => $tabs['account']]; } @endphp
+                @php $tabs = ['allowances' => ['fa-utensils', 'Yemek & Yol Ücretleri', 'Aylık standart tutarlar'], 'pricing' => ['fa-ruler-combined', 'Fiyatlar & KDV', 'm² fiyatı ve KDV oranı'], 'company' => ['fa-building-columns', 'Şirket & Marka', 'Görünen ad ve banka bilgileri'], 'account' => ['fa-user-shield', 'Hesap', 'Ad, kullanıcı adı, şifre'], 'users' => ['fa-users-gear', 'Kullanıcılar', 'Sisteme giriş yapabilenler'], 'categories' => ['fa-tags', 'Gider Kategorileri', 'Muhasebedeki kategoriler'], 'lists' => ['fa-list-check', 'Listeler', 'Görevler, bankalar, izin türleri'], 'logins' => ['fa-clock-rotate-left', 'Oturum Geçmişi', 'Kim nereden girmiş'], 'system' => ['fa-server', 'Sistem', 'Güncelleme ve önbellek']]; if (! $manager) { $tabs = ['account' => $tabs['account']]; } @endphp
                 @foreach ($tabs as $key => [$icon, $label, $desc])
                     <button type="button" @click="tab = '{{ $key }}'" :class="tab === '{{ $key }}' ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-50'" class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition">
                         <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white"><i class="fa-solid {{ $icon }} text-sm" :class="tab === '{{ $key }}' ? 'text-brand-600' : 'text-slate-400'"></i></span>
@@ -97,12 +97,20 @@
                 <div class="flex items-start gap-4 border-b border-slate-100 px-6 py-5">
                     <div class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600"><i class="fa-solid fa-building-columns"></i></div>
                     <div>
-                        <h2 class="text-base font-semibold text-slate-900">Şirket &amp; Banka</h2>
-                        <p class="mt-0.5 text-sm text-slate-500">Muhasebe &gt; Maaşlar'dan indirilen Garanti "TGB Yeni Maaş Dosyası" bu bilgilerle doldurulur.</p>
+                        <h2 class="text-base font-semibold text-slate-900">Şirket &amp; Marka</h2>
+                        <p class="mt-0.5 text-sm text-slate-500">Buradaki ad sol menüde, giriş ekranında, tarayıcı sekmesinde ve banka dosyasında görünür.</p>
                     </div>
                 </div>
                 <div class="grid gap-5 px-6 py-5 sm:grid-cols-2">
-                    <div class="sm:col-span-2"><label class="form-label">Şirket adı</label><input name="company_name" value="{{ old('company_name', $values['company_name']) }}" class="form-input"></div>
+                    <div><label class="form-label">Şirket adı</label><input name="company_name" value="{{ old('company_name', $values['company_name']) }}" placeholder="Dura Clean Global" class="form-input"></div>
+                    <div><label class="form-label">Alt başlık <span class="font-normal text-slate-400">— adın altındaki yazı</span></label><input name="app_tagline" value="{{ old('app_tagline', $values['app_tagline']) }}" placeholder="Personel Yönetimi" class="form-input"></div>
+                    <div class="sm:col-span-2"><label class="form-label">İzin formu başlığı <span class="font-normal text-slate-400">— boşsa şirket adından üretilir</span></label><input name="leave_form_title" value="{{ old('leave_form_title', $values['leave_form_title']) }}" placeholder="{{ \App\Support\Brand::leaveFormTitle() }}" class="form-input"></div>
+                    <div class="sm:col-span-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-white" style="background: linear-gradient(135deg, #3573fb 0%, #1557d6 100%);"><i class="fa-solid fa-building text-sm"></i></span>
+                        <span class="leading-tight"><span class="block text-sm font-bold tracking-tight text-slate-900">{{ \App\Support\Brand::name() }}</span><span class="block text-[11px] font-medium text-slate-500">{{ \App\Support\Brand::tagline() ?: '—' }}</span></span>
+                        <span class="ml-auto text-[11px] text-slate-400">Menüde böyle görünüyor</span>
+                    </div>
+                    <div class="sm:col-span-2 border-t border-slate-100 pt-4"><div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Banka (Garanti maaş dosyası)</div></div>
                     <div><label class="form-label">Banka kurum kodu</label><div class="relative"><i class="fa-solid fa-hashtag pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i><input name="bank_corp_code" value="{{ old('bank_corp_code', $values['bank_corp_code']) }}" placeholder="615399" class="form-input pl-8 font-mono"></div></div>
                     <div><label class="form-label">Şube kodu</label><div class="relative"><i class="fa-solid fa-code-branch pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i><input name="bank_branch_code" value="{{ old('bank_branch_code', $values['bank_branch_code']) }}" placeholder="544" class="form-input pl-8 font-mono"></div></div>
                     <div class="sm:col-span-2"><label class="form-label">Maaş ödeme hesabı</label><div class="relative"><i class="fa-solid fa-wallet pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i><input name="bank_account" value="{{ old('bank_account', $values['bank_account']) }}" placeholder="6290915" class="form-input pl-8 font-mono"></div></div>
@@ -421,12 +429,15 @@
                     <div class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600"><i class="fa-solid fa-clock-rotate-left"></i></div>
                     <div class="flex-1">
                         <h2 class="text-base font-semibold text-slate-900">Oturum Geçmişi</h2>
-                        <p class="mt-0.5 text-sm text-slate-500">Bütün kullanıcıların girişleri: kim, ne zaman, hangi IP ve cihazdan. Hatalı şifre denemeleri de listelenir. Son 100 kayıt.</p>
+                        <p class="mt-0.5 text-sm text-slate-500">Bütün kullanıcıların girişleri: kim, ne zaman, hangi IP ve cihazdan. Hatalı şifre denemeleri de listelenir. Kayıtlar silinmez; aşağıda en son 100 tanesi listelenir.</p>
+                        @if ($loginStats['first'])
+                            <p class="mt-1 text-[11px] text-slate-400">İlk kayıt: {{ \Illuminate\Support\Carbon::parse($loginStats['first'])->format('d.m.Y H:i') }}</p>
+                        @endif
                     </div>
-                    @if ($loginLogs->isNotEmpty())
+                    @if ($loginStats['total'] > 0)
                         <div class="shrink-0 text-right text-xs text-slate-500">
-                            <div><b class="text-slate-800">{{ $loginLogs->where('successful', true)->count() }}</b> başarılı</div>
-                            <div><b class="text-red-600">{{ $loginLogs->where('successful', false)->count() }}</b> hatalı</div>
+                            <div><b class="text-slate-800">{{ $loginStats['total'] }}</b> kayıt</div>
+                            <div><b class="text-emerald-700">{{ $loginStats['ok'] }}</b> başarılı · <b class="text-red-600">{{ $loginStats['fail'] }}</b> hatalı</div>
                         </div>
                     @endif
                 </div>

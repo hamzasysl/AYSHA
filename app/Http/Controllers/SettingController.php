@@ -38,13 +38,20 @@ class SettingController extends Controller
         ];
 
         // Tüm kullanıcıların giriş kayıtları (kim, ne zaman, nereden)
-        $loginLogs = Schema::hasTable('login_logs')
+        $hasLoginLogs = Schema::hasTable('login_logs');
+        $loginLogs = $hasLoginLogs
             ? \App\Models\LoginLog::with('user')->latest('created_at')->latest('id')->limit(100)->get()
             : collect();
+        $loginStats = $hasLoginLogs ? [
+            'total' => \App\Models\LoginLog::count(),
+            'ok' => \App\Models\LoginLog::where('successful', true)->count(),
+            'fail' => \App\Models\LoginLog::where('successful', false)->count(),
+            'first' => \App\Models\LoginLog::min('created_at'),
+        ] : ['total' => 0, 'ok' => 0, 'fail' => 0, 'first' => null];
 
         $pendingMigrations = SystemController::status()['pending'];
 
-        return view('settings.edit', compact('values', 'users', 'categories', 'categoryUsage', 'lists', 'listUsage', 'pendingMigrations', 'loginLogs'));
+        return view('settings.edit', compact('values', 'users', 'categories', 'categoryUsage', 'lists', 'listUsage', 'pendingMigrations', 'loginLogs', 'loginStats'));
     }
 
     /** Ayarlar > m² Fiyatları (m² Hesaplayıcı'nın standart tutarları). */
@@ -83,6 +90,8 @@ class SettingController extends Controller
             'travel_allowance' => ['required', 'string'],
             'travel_allowance_retired' => ['required', 'string'],
             'company_name' => ['nullable', 'string', 'max:100'],
+            'app_tagline' => ['nullable', 'string', 'max:100'],
+            'leave_form_title' => ['nullable', 'string', 'max:120'],
             'bank_corp_code' => ['nullable', 'string', 'max:20'],
             'bank_branch_code' => ['nullable', 'string', 'max:20'],
             'bank_account' => ['nullable', 'string', 'max:30'],
@@ -93,7 +102,7 @@ class SettingController extends Controller
             abort_if($v === null || ! is_numeric($v) || $v < 0, 422, 'Geçersiz tutar.');
             Setting::set($k, $v);
         }
-        foreach (['company_name', 'bank_corp_code', 'bank_branch_code', 'bank_account'] as $k) {
+        foreach (['company_name', 'app_tagline', 'leave_form_title', 'bank_corp_code', 'bank_branch_code', 'bank_account'] as $k) {
             Setting::set($k, $data[$k] ?? null);
         }
 

@@ -21,7 +21,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ? $title.' · ' : '' }}{{ config('app.name') }}</title>
+    <title>{{ $title ? $title.' · ' : '' }}{{ \App\Support\Brand::title() }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -40,12 +40,12 @@
 
         {{-- Logo --}}
         <div class="flex items-center gap-3 px-4 pt-5 pb-4" :class="collapsed ? 'lg:justify-center lg:px-0' : ''">
-            <a href="{{ route('dashboard') }}" class="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-white shadow-[0_8px_18px_-8px_rgba(30,111,242,.7)]" style="background: linear-gradient(135deg, #3573fb 0%, #1557d6 100%);" title="TTB Turizm">
+            <a href="{{ route('dashboard') }}" class="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-white shadow-[0_8px_18px_-8px_rgba(30,111,242,.7)]" style="background: linear-gradient(135deg, #3573fb 0%, #1557d6 100%);" title="{{ \App\Support\Brand::name() }}">
                 <i class="fa-solid fa-building text-sm"></i>
             </a>
             <a href="{{ route('dashboard') }}" class="min-w-0 leading-none" x-show="!collapsed">
-                <span class="block truncate text-sm font-bold tracking-tight text-slate-900">TTB Turizm</span>
-                <span class="mt-0.5 block truncate text-[11px] font-medium text-slate-500">Personel Yönetimi</span>
+                <span class="block truncate text-sm font-bold tracking-tight text-slate-900">{{ \App\Support\Brand::name() }}</span>
+                @if (\App\Support\Brand::tagline())<span class="mt-0.5 block truncate text-[11px] font-medium text-slate-500">{{ \App\Support\Brand::tagline() }}</span>@endif
             </a>
             <button @click="mobileOpen = false" class="ml-auto text-slate-500 lg:hidden"><i class="fa-solid fa-xmark text-lg"></i></button>
         </div>

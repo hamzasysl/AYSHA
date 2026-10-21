@@ -31,13 +31,3 @@
                     <p class="mt-3 text-xs text-slate-500">Yeni bir görünüm veya tasarım değişikliği sonrası sayfa eski görünüyorsa "Önbelleği temizle" yeterlidir.</p>
                 </div>
             </div>
-
-            <div class="card px-6 py-5">
-                <h3 class="mb-3 text-sm font-semibold text-slate-900"><i class="fa-solid fa-circle-info text-slate-400"></i>Sunucu bilgileri</h3>
-                <div class="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
-                    <div class="flex justify-between border-b border-slate-50 py-1"><span class="text-slate-500">PHP sürümü</span><span class="font-medium text-slate-800">{{ $sys['php'] }}</span></div>
-                    <div class="flex justify-between border-b border-slate-50 py-1"><span class="text-slate-500">Laravel</span><span class="font-medium text-slate-800">{{ $sys['laravel'] }}</span></div>
-                    <div class="flex justify-between border-b border-slate-50 py-1"><span class="text-slate-500">Veritabanı</span><span class="font-medium text-slate-800">{{ $sys['db'] }}</span></div>
-                    <div class="flex justify-between border-b border-slate-50 py-1"><span class="text-slate-500">Ortam</span><span class="font-medium text-slate-800">{{ $sys['env'] }}@if ($sys['debug'])<span class="badge-danger ml-2">hata ayıklama açık</span>@endif</span></div>
-                </div>
-            </div>

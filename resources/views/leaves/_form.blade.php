@@ -109,7 +109,7 @@
         <div class="card p-5 text-xs text-slate-500 space-y-1">
             <div><b class="text-slate-700">Raporlu:</b> sağlık raporu olan günler, yıllık izinden düşmez.</div>
             <div><b class="text-slate-700">Devamsızlık:</b> habersiz gelmeme; gün gün kaydedilir, yıllık izinden düşmez.</div>
-            <div><b class="text-slate-700">Yazdır:</b> kayıttan sonra listedeki yazıcı ikonu TTB Grup İzin Formu'nu doldurulmuş açar.</div>
+            <div><b class="text-slate-700">Yazdır:</b> kayıttan sonra listedeki yazıcı ikonu izin formunu doldurulmuş açar.</div>
         </div>
     </div>
 </div>

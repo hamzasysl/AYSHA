@@ -32,7 +32,7 @@
     
     <div class="head">
         <div class="box"></div>
-        <div class="box title">TTB GRUP İZİN FORMU<div style="text-align:right;font-weight:normal;font-size:12px;padding:8px 10px 0 0">Tarih: {{ $leave->created_at->format('d.m.Y') }}</div></div>
+        <div class="box title">{{ \App\Support\Brand::leaveFormTitle() }}<div style="text-align:right;font-weight:normal;font-size:12px;padding:8px 10px 0 0">Tarih: {{ $leave->created_at->format('d.m.Y') }}</div></div>
     </div>
     @php $fmt = fn ($d) => rtrim(rtrim(number_format((float) $d, 1, ',', '.'), '0'), ','); $e = $leave->employee; @endphp
     <table>

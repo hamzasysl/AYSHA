@@ -4,7 +4,7 @@
     <script>try { if (localStorage.getItem('aysha_theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Giriş · {{ config('app.name') }}</title>
+    <title>Giriş · {{ \App\Support\Brand::title() }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -13,7 +13,7 @@
         <div class="mb-6 flex items-center justify-center gap-3 text-slate-900">
             
             <div class="leading-tight">
-                <div class="flex items-center justify-center gap-3"><span class="grid h-11 w-11 place-items-center rounded-xl text-white" style="background: linear-gradient(135deg, #3573fb 0%, #1557d6 100%);"><i class="fa-solid fa-building"></i></span><span class="text-left leading-none"><span class="block text-lg font-bold tracking-tight text-slate-900">TTB Turizm</span><span class="mt-1 block text-xs font-medium text-slate-500">Personel Yönetimi</span></span></div>
+                <div class="flex items-center justify-center gap-3"><span class="grid h-11 w-11 place-items-center rounded-xl text-white" style="background: linear-gradient(135deg, #3573fb 0%, #1557d6 100%);"><i class="fa-solid fa-building"></i></span><span class="text-left leading-none"><span class="block text-lg font-bold tracking-tight text-slate-900">{{ \App\Support\Brand::name() }}</span>@if (\App\Support\Brand::tagline())<span class="mt-1 block text-xs font-medium text-slate-500">{{ \App\Support\Brand::tagline() }}</span>@endif</span></div>
                 
             </div>
         </div>

@@ -17,7 +17,7 @@ class SystemTest extends TestCase
         $this->actingAs($admin)->get('/ayarlar?tab=system')->assertOk()
             ->assertSee('Güncelleme sonrası')
             ->assertSee('Veritabanı güncel')
-            ->assertSee('Sunucu bilgileri');
+            ->assertDontSee('Sunucu bilgileri');
 
         $this->actingAs($admin)->post('/ayarlar/sistem/guncelle')
             ->assertRedirect('/ayarlar?tab=system')->assertSessionHas('success');

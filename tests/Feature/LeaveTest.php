@@ -76,7 +76,7 @@ class LeaveTest extends TestCase
         $this->actingAs($this->user)->put("/izinler/{$l->id}", ['employee_id' => $e->id, 'type' => 'annual', 'leave_year' => 2026, 'start_date' => '2026-09-07', 'end_date' => '2026-09-21', 'days' => '11', 'deduct_annual' => '1'])
             ->assertSessionHas('leave_warning');
 
-        $this->actingAs($this->user)->get("/izinler/{$l->id}/yazdir")->assertOk()->assertSee('TTB GRUP İZİN FORMU')->assertSee('Gülver Çubukçu')->assertSee('8 iş günü');
+        $this->actingAs($this->user)->get("/izinler/{$l->id}/yazdir")->assertOk()->assertSee('DURA CLEAN GLOBAL İZİN FORMU')->assertSee('Gülver Çubukçu')->assertSee('8 iş günü');
         $this->actingAs($this->user)->get("/personel/{$e->id}?tab=leaves")->assertOk()->assertSee('İzinler (1)')->assertSee('Düşüldü');
 
         $this->actingAs($this->user)->from('/izinler')->delete("/izinler/{$l->id}")->assertRedirect('/izinler');
