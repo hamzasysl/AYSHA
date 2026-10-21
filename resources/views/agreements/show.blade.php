@@ -44,7 +44,7 @@
                     ['Yetkili', $agreement->contact_name],
                     ['Telefon', $agreement->phone],
                     ['E-posta', $agreement->email],
-                    ['Adres', $agreement->address],
+                    ['Konum', $agreement->address],
                     ['Başlangıç', $agreement->start_date?->format('d.m.Y')],
                     ['Bitiş', $agreement->end_date?->format('d.m.Y')],
                     ['Ödeme günü', $agreement->payment_day ? 'Ayın '.$agreement->payment_day.'. günü' : null],

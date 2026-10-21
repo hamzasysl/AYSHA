@@ -54,7 +54,7 @@ class AgreementRequest extends FormRequest
     {
         return [
             'name' => 'kurum adı', 'type' => 'tür', 'status' => 'durum', 'contact_name' => 'yetkili',
-            'phone' => 'telefon', 'email' => 'e-posta', 'address' => 'adres', 'm2' => 'alan',
+            'phone' => 'telefon', 'email' => 'e-posta', 'address' => 'konum', 'm2' => 'alan',
             'm2_rate' => 'm² fiyatı', 'amount' => 'tutar', 'vat_rate' => 'KDV oranı',
             'start_date' => 'başlangıç', 'end_date' => 'bitiş', 'payment_day' => 'ödeme günü', 'note' => 'açıklama',
         ];

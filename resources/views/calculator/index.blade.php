@@ -69,25 +69,28 @@
 
         <div class="card col-span-full p-6" x-data="{
                 rate: '{{ $n($vat) }}',
-                qty: '1',
+                discount: '',
                 net: '', gross: '', total: '', base: 0,
                 fmt(v) { return v ? new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v) : ''; },
                 get r() { return Math.max(0, parseMoney(this.rate)) / 100; },
-                get q() { return Math.max(0, parseMoney(this.qty)) || 0; },
+                get d() { return Math.min(100, Math.max(0, parseMoney(this.discount))) / 100; },
                 calc(src) {
-                    const k = 1 + this.r, q = this.q || 1;
-                    let n = src === 'net' ? parseMoney(this.net) : src === 'gross' ? parseMoney(this.gross) / k : parseMoney(this.total) / k / q;
+                    const k = 1 + this.r, ind = 1 - this.d;
+                    let n = src === 'net' ? parseMoney(this.net)
+                          : src === 'gross' ? parseMoney(this.gross) / k
+                          : (ind > 0 ? parseMoney(this.total) / k / ind : 0);
                     if (! isFinite(n) || n < 0) n = 0;
                     this.base = n;
                     if (src !== 'net') this.net = this.fmt(n);
                     if (src !== 'gross') this.gross = this.fmt(n * k);
-                    if (src !== 'total') this.total = this.fmt(n * k * q);
+                    if (src !== 'total') this.total = this.fmt(n * ind * k);
                 },
-                get matrah() { return this.base * (this.q || 1); },
+                get discountAmount() { return this.base * this.d; },
+                get matrah() { return this.base - this.discountAmount; },
                 get vat() { return this.matrah * this.r; },
              }">
             <h2 class="mb-1 font-semibold text-slate-900"><i class="fa-solid fa-percent"></i>KDV Hesaplama</h2>
-            <p class="mb-4 text-xs text-slate-500">Üç fiyat alanından hangisini yazarsanız diğerleri hesaplanır.</p>
+            <p class="mb-4 text-xs text-slate-500">Üç fiyat alanından hangisini yazarsanız diğerleri hesaplanır. İndirim, KDV'den önce fiyattan düşülür.</p>
 
             <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                 <div>
@@ -95,8 +98,8 @@
                     <div class="relative"><input id="kdv_rate" x-model="rate" @input="calc('net')" inputmode="decimal" class="form-input pr-8 text-right font-medium tabular-nums"><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">%</span></div>
                 </div>
                 <div>
-                    <label class="form-label" for="kdv_qty">Miktar</label>
-                    <input id="kdv_qty" x-model="qty" @input="calc('net')" inputmode="decimal" class="form-input text-right font-medium tabular-nums">
+                    <label class="form-label" for="kdv_discount">İndirim</label>
+                    <div class="relative"><input id="kdv_discount" x-model="discount" @input="calc('net')" inputmode="decimal" placeholder="0" class="form-input pr-8 text-right font-medium tabular-nums"><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">%</span></div>
                 </div>
                 <div>
                     <label class="form-label" for="kdv_net">Birim fiyat <span class="font-normal text-slate-400">KDV hariç</span></label>
@@ -107,12 +110,13 @@
                     <div class="relative"><input id="kdv_gross" x-model="gross" @input="calc('gross')" inputmode="decimal" placeholder="0,00" class="form-input pr-8 text-right font-medium tabular-nums"><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">₺</span></div>
                 </div>
                 <div>
-                    <label class="form-label" for="kdv_total">Toplam <span class="font-normal text-slate-400">KDV dahil</span></label>
+                    <label class="form-label" for="kdv_total">Toplam <span class="font-normal text-slate-400">indirimli, KDV dahil</span></label>
                     <div class="relative"><input id="kdv_total" x-model="total" @input="calc('total')" inputmode="decimal" placeholder="0,00" class="form-input pr-8 text-right font-medium tabular-nums"><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">₺</span></div>
                 </div>
             </div>
 
-            <div class="mt-5 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-3">
+            <div class="mt-5 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-4">
+                <div x-show="d > 0" x-cloak><div class="text-xs text-slate-500">İndirim (%<span x-text="discount || 0"></span>)</div><div class="mt-0.5 font-semibold tabular-nums text-red-600" x-text="'−' + formatMoney(discountAmount)"></div></div>
                 <div><div class="text-xs text-slate-500">Matrah (KDV hariç)</div><div class="mt-0.5 font-semibold tabular-nums text-slate-900" x-text="formatMoney(matrah)"></div></div>
                 <div><div class="text-xs text-slate-500">KDV (%<span x-text="rate || 0"></span>)</div><div class="mt-0.5 font-semibold tabular-nums text-brand-600" x-text="formatMoney(vat)"></div></div>
                 <div><div class="text-xs text-slate-500">Genel toplam</div><div class="mt-0.5 text-lg font-bold tabular-nums text-slate-900" x-text="formatMoney(matrah + vat)"></div></div>
