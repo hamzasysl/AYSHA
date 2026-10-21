@@ -52,12 +52,12 @@
                 <thead><tr>
                     <th class="th">Şirket</th><th class="th">Tür</th><th class="th text-right">Alan</th><th class="th text-right">m² Fiyatı</th>
                     <th class="th text-right">KDV Hariç</th><th class="th text-right">KDV Dahil</th>
-                    <th class="th text-right">{{ $label }} Ödeme</th><th class="th">{{ $label }} Ekstra</th><th class="th text-right">İşlem</th>
+                    <th class="th text-right" title="{{ $label }} içinde alınan ödeme">Ödeme</th><th class="th" title="{{ $label }} içindeki ekstra gelir / gider">Ekstra</th><th class="th text-right">İşlem</th>
                 </tr></thead>
                 <tbody class="divide-y divide-slate-100">
                 @forelse ($agreements as $a)
                     @php $paid = $a->paid($year, $month); $inc = $a->extraIncome($year, $month); $exp = $a->extraExpense($year, $month); @endphp
-                    <tr class="hover:bg-slate-50/70">
+                    <tr class="hover:bg-slate-50/70" x-data="{ edit: false }">
                         <td class="td whitespace-nowrap">
                             <a href="{{ route('agreements.show', $a) }}" class="font-medium text-slate-900 hover:text-brand-600">{{ $a->name }}</a>
                             <div class="text-[11px] text-slate-500">{{ $a->contact_name ?: ($a->address ?: '—') }}@if ($a->status === 'passive') · <span class="text-slate-400">pasif</span>@endif</div>
@@ -73,7 +73,28 @@
                             @if ($exp > 0)<span class="badge-danger" title="Ekstra gider">−@money($exp)</span>@endif
                             @if ($inc <= 0 && $exp <= 0)<span class="text-slate-400">—</span>@endif
                         </td>
-                        <td class="td text-right whitespace-nowrap"><a href="{{ route('agreements.show', $a) }}" class="btn-icon" title="Detay"><i class="fa-solid fa-arrow-right"></i></a></td>
+                        <td class="td text-right whitespace-nowrap">
+                            <div class="inline-flex items-center gap-1.5">
+                                @can('edit')<button type="button" @click="edit = true" class="btn-icon" title="Düzenle"><i class="fa-solid fa-pen"></i></button>@endcan
+                                @can('delete')<x-confirm-form :action="route('agreements.destroy', $a)" title="Anlaşmayı sil" :message="$a->name.' anlaşması, kayıtları ve notları silinecek.'" button="Evet, sil"><i class="fa-solid fa-trash"></i></x-confirm-form>@endcan
+                                <a href="{{ route('agreements.show', $a) }}" class="btn-icon" title="Kayıtlar ve notlar"><i class="fa-solid fa-arrow-right"></i></a>
+                            </div>
+
+                            @can('edit')
+                            <template x-teleport="body">
+                                <template x-if="edit">
+                                <div x-show="edit" @click.self="edit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                                    <form method="POST" action="{{ route('agreements.update', $a) }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-2xl space-y-4 rounded-xl bg-white p-6 shadow-pop text-left">
+                                        @csrf @method('PATCH')
+                                        <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">{{ $a->name }}</h3><button type="button" @click="edit = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+                                        @include('agreements._form', ['a' => $a])
+                                        <div class="flex justify-end gap-2"><button type="button" @click="edit = false" class="btn-secondary">Vazgeç</button><button class="btn-success"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button></div>
+                                    </form>
+                                </div>
+                                </template>
+                            </template>
+                            @endcan
+                        </td>
                     </tr>
                 @empty
                     <tr><td colspan="9" class="px-5 py-12 text-center text-sm text-slate-500">Bu filtrede anlaşma yok. Sağ üstten <b>Yeni Anlaşma</b> ekleyin.</td></tr>

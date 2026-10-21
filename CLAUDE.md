@@ -68,13 +68,14 @@ php artisan test
 ## Hesaplayıcı (m² + KDV)
 - `/hesaplayici` (`calculator`, `Route::view`, tüm roller; eski `/m2-hesaplayici` buraya yönlenir). İki kart: **m² Hesaplama** ve **KDV Hesaplama**.
 - m² kuralı `App\Support\M2Pricing::rates()/calculate()`, tutarlar Ayarlar > **Fiyatlar & KDV** sekmesinden (`settings.pricing`; `Setting` anahtarları `m2_rate` 100, `m2_large_rate` 80, `m2_large_limit` 100, `m2_small_limit` 50, `vat_rate` 20 — migration gerekmez). Sınır üstü büyük alan fiyatı (101 m² → 8.080 ₺; kullanıcı böyle istedi), küçük alan sınırı altı yine standart fiyat ama "küçük alan" rozeti. Sayfadaki sınır/örnek metinleri ayarlardan üretilir; sabit sayı yazma. "m² başı fiyat" elle doldurulursa kuralı ezer.
-- KDV kartı mezeSoft e-fatura satırı gibi: KDV oranı + indirim (%) + üç fiyat alanı (birim KDV hariç / birim KDV dahil / toplam indirimli KDV dahil). Hangisi yazılırsa diğer ikisi hesaplanır (`calc(src)`, yazılan alana geri yazmaz). İndirim KDV'den ÖNCE fiyattan düşülür. Altta indirim · matrah · KDV · genel toplam. Miktar alanı YOK (kullanıcı istemedi).
+- KDV kartı sırası: birim fiyat (KDV hariç) → birim fiyat (KDV dahil) → KDV oranı → indirim (%), altında ayrı vurgulu kutuda "Ödenecek tutar". Üç fiyat alanından hangisi yazılırsa diğerleri hesaplanır (`calc(src)`, yazılan alana geri yazmaz). İndirim KDV'den ÖNCE fiyattan düşülür. En altta indirim · matrah · KDV · genel toplam. Miktar alanı YOK (kullanıcı istemedi).
 
 ## Anlaşmalar
 - `/anlasmalar` (`agreements.*`, `AgreementController`): temizlik hizmeti verilen ŞİRKETLER (UI'da "kurum" deme). `Agreement` (HasNotes; type recurring|one_time, status active|passive, m2, m2_rate, amount, vat_rate, yetkili/telefon, başlangıç-bitiş, ödeme günü). `address` alanı posta adresi değil KONUM açıklamasıdır ("1. blok, 3. kat, no 129").
 - Anlaşma bedeli SADE: `net_total` = amount, `vat_amount`, `gross_total`. m² ve m² fiyatı doluysa `amount` otomatik hesaplanır (`Agreement::saving`); formda m² yazılınca fiyat `M2Pricing` kuralını takip eder (100 m² üstü 80 ₺), elle değiştirilirse `rateTouched` ile kural devre dışı kalır ("Kurala göre" düğmesiyle geri döner).
 - `AgreementEntry` = anlaşmanın hareket defteri (`agreement_entries`): entry_date, kind (payment=ödeme alındı / income=ekstra gelir / expense=ekstra gider), label, amount. Durum/tahsilat takibi YOK — kullanıcı "tahsilat o bu şu olmayacak, sadece hangi ay ne kadar ödedi, ekstra ne gelir/gider oldu" dedi. Detay sayfasında aya göre gruplu liste + ay altı toplamı; `paid()/extraIncome()/extraExpense()/balance()` dönem filtresi alır. Ekstralar anlaşma bedelini ETKİLEMEZ.
 - Notlar `/notlar/agreements/{id}` ile çalışır (`NoteController::TYPES`). Anlaşma silinince kayıtlar cascade, notlar `deleteNotes()` ile gider.
+- Liste sayfasından satır içi düzenleme/silme var (detaya girmeden); detay sayfası kayıt defteri ve notlar içindir. Kolon başlıklarına seçili ay adını yazma (kullanıcı "Ekim 2026 Ödeme" biçimini istemedi), ay bilgisi filtrede ve stat kartlarında.
 - Anlaşmalar GELİR tarafıdır; muhasebe/raporlar gider tarafıdır, ikisi karışmaz.
 
 ## İzin & devamsızlık
