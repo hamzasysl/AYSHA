@@ -80,12 +80,13 @@ class Agreement extends Model
         return round($this->net_total + $this->vat_amount, 2);
     }
 
-    private function entriesOf(string $kind, ?int $year = null, ?int $month = null): float
+    private function entriesOf(string $kind, ?int $year = null, ?int $month = null, string $status = 'done'): float
     {
         $entries = $this->relationLoaded('entries') ? $this->entries : $this->entries()->get();
 
         return round((float) $entries
             ->where('kind', $kind)
+            ->where('status', $status)
             ->when($year, fn ($c) => $c->filter(fn ($e) => (int) $e->entry_date->year === $year))
             ->when($month, fn ($c) => $c->filter(fn ($e) => (int) $e->entry_date->month === $month))
             ->sum(fn ($e) => (float) $e->amount), 2);
@@ -105,6 +106,12 @@ class Agreement extends Model
     public function extraExpense(?int $year = null, ?int $month = null): float
     {
         return $this->entriesOf('expense', $year, $month);
+    }
+
+    /** Henüz yapılmamış, beklenen ödemeler. */
+    public function expected(?int $year = null, ?int $month = null): float
+    {
+        return $this->entriesOf('payment', $year, $month, 'pending');
     }
 
     /** Alınan ödeme + ekstra gelir − ekstra gider. */

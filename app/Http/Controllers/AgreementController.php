@@ -33,6 +33,7 @@ class AgreementController extends Controller
             'monthly_net' => $activeRecurring->sum(fn ($a) => $a->net_total),
             'monthly_gross' => $activeRecurring->sum(fn ($a) => $a->gross_total),
             'paid' => $all->sum(fn ($a) => $a->paid($year, $month)),
+            'expected' => $all->sum(fn ($a) => $a->expected($year, $month)),
             'income' => $all->sum(fn ($a) => $a->extraIncome($year, $month)),
             'expense' => $all->sum(fn ($a) => $a->extraExpense($year, $month)),
         ];
@@ -92,6 +93,15 @@ class AgreementController extends Controller
         return back()->with('success', 'Kayıt güncellendi.');
     }
 
+    /** Satırdaki açılır menü: yapıldı <-> ödeme bekleniyor. */
+    public function setEntryStatus(Request $request, AgreementEntry $entry): RedirectResponse
+    {
+        $data = $request->validate(['status' => ['required', Rule::in(array_keys(AgreementEntry::STATUSES))]]);
+        $entry->update($data);
+
+        return back()->with('success', $entry->kind_label.' → '.$entry->status_label);
+    }
+
     public function destroyEntry(AgreementEntry $entry): RedirectResponse
     {
         $entry->delete();
@@ -101,14 +111,18 @@ class AgreementController extends Controller
 
     private function entryData(Request $request): array
     {
-        $request->merge(['amount' => str_replace(['.', ','], ['', '.'], preg_replace('/[^\d,.]/', '', (string) $request->input('amount')))]);
+        $request->merge([
+            'amount' => str_replace(['.', ','], ['', '.'], preg_replace('/[^\d,.]/', '', (string) $request->input('amount'))),
+            'status' => $request->input('status') ?: 'done',
+        ]);
 
         return $request->validate([
             'entry_date' => ['required', 'date'],
             'kind' => ['required', Rule::in(array_keys(AgreementEntry::KINDS))],
+            'status' => ['required', Rule::in(array_keys(AgreementEntry::STATUSES))],
             'label' => ['nullable', 'string', 'max:150'],
             'amount' => ['required', 'numeric', 'min:0', 'max:99999999'],
-        ], [], ['entry_date' => 'tarih', 'kind' => 'tür', 'label' => 'açıklama', 'amount' => 'tutar']);
+        ], [], ['entry_date' => 'tarih', 'kind' => 'tür', 'status' => 'durum', 'label' => 'açıklama', 'amount' => 'tutar']);
     }
 
     /** Yeni anlaşma formunun varsayılanları. */

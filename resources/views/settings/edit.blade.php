@@ -1,6 +1,6 @@
 @php $fmt = fn ($x) => number_format((float) $x, 2, ',', '.'); $manager = auth()->user()->isManager(); $tab = $manager ? request('tab', old('_tab', 'allowances')) : 'account'; @endphp
 <x-app-layout title="Ayarlar" subtitle="Ödenekler, şirket ve banka bilgileri, hesabınız">
-    <div x-data="{ tab: '{{ $tab }}' }" class="grid gap-6 lg:grid-cols-[240px_1fr]">
+    <div x-data="{ tab: '{{ $tab }}' }" class="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
         {{-- Sol menü --}}
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <nav class="card p-2">
@@ -14,7 +14,7 @@
             </nav>
         </aside>
 
-        <div class="space-y-6">
+        <div class="min-w-0 space-y-6">
             @if ($manager && count($pendingMigrations) > 0)
                 <div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                     <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
@@ -146,15 +146,15 @@
                         <tbody class="divide-y divide-slate-100">
                         @forelse ($accounts as $acc)
                             <tr x-data="{ edit: false }">
-                                <td class="td whitespace-nowrap">
-                                    <span class="font-medium text-slate-900">{{ $acc->label }}</span>
-                                    @if ($acc->is_payroll)<span class="badge-info ml-1.5" title="Garanti maaş dosyası bu hesapla üretilir"><i class="fa-solid fa-file-invoice-dollar"></i>Maaş</span>@endif
-                                    @if ($acc->note)<div class="text-[11px] text-slate-400">{{ $acc->note }}</div>@endif
+                                <td class="td max-w-[170px]">
+                                    <span class="block truncate font-medium text-slate-900" title="{{ $acc->label }}">{{ $acc->label }}</span>
+                                    @if ($acc->is_payroll)<span class="badge-info" title="Garanti maaş dosyası bu hesapla üretilir"><i class="fa-solid fa-file-invoice-dollar"></i>Maaş</span>@endif
+                                    @if ($acc->note)<div class="truncate text-[11px] text-slate-400" title="{{ $acc->note }}">{{ $acc->note }}</div>@endif
                                 </td>
-                                <td class="td whitespace-nowrap">{{ $acc->bank_name ?: '—' }}</td>
-                                <td class="td whitespace-nowrap">{{ $acc->account_holder ?: '—' }}</td>
-                                <td class="td whitespace-nowrap font-mono text-xs">{{ $acc->iban_pretty ?: '—' }}</td>
-                                <td class="td whitespace-nowrap font-mono text-xs">{{ $acc->account_no ?: '—' }}@if ($acc->branch_code)<div class="text-[11px] text-slate-400">şube {{ $acc->branch_code }}</div>@endif</td>
+                                <td class="td max-w-[120px] truncate" title="{{ $acc->bank_name }}">{{ $acc->bank_name ?: '—' }}</td>
+                                <td class="td max-w-[180px] truncate" title="{{ $acc->account_holder }}">{{ $acc->account_holder ?: '—' }}</td>
+                                <td class="td whitespace-nowrap font-mono text-[11px]">{{ $acc->iban_pretty ?: '—' }}</td>
+                                <td class="td whitespace-nowrap font-mono text-[11px]">{{ $acc->account_no ?: '—' }}@if ($acc->branch_code)<div class="text-slate-400">şube {{ $acc->branch_code }}</div>@endif</td>
                                 <td class="td text-right whitespace-nowrap">
                                     <div class="inline-flex items-center gap-2">
                                         <button type="button" @click="edit = true" class="btn-icon" title="Düzenle"><i class="fa-solid fa-pen"></i></button>

@@ -125,4 +125,26 @@ class AgreementTest extends TestCase
         ])->assertRedirect();
         $this->assertSame('45000.00', (string) $a->fresh()->amount);
     }
+
+    public function test_entry_status_can_be_pending_and_changed(): void
+    {
+        $a = Agreement::factory()->create(['m2' => null, 'm2_rate' => null, 'amount' => 10000, 'vat_rate' => 20]);
+
+        $this->actingAs($this->user)->post("/anlasmalar/{$a->id}/kayit", [
+            'entry_date' => '2026-10-05', 'kind' => 'payment', 'status' => 'pending', 'label' => 'Ekim ödemesi', 'amount' => '12.000,00',
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        // Bekleyen kayıt tahsil edilmiş sayılmaz
+        $this->assertSame(0.0, $a->fresh()->paid(2026, 10));
+        $this->assertSame(12000.0, $a->fresh()->expected(2026, 10));
+
+        $entry = AgreementEntry::first();
+        $this->actingAs($this->user)->post("/anlasmalar/kayit/{$entry->id}/durum", ['status' => 'done'])
+            ->assertRedirect()->assertSessionHas('success', 'Ödeme → Yapıldı');
+
+        $this->assertSame(12000.0, $a->fresh()->paid(2026, 10));
+        $this->assertSame(0.0, $a->fresh()->expected(2026, 10));
+
+        $this->actingAs($this->user)->get("/anlasmalar/{$a->id}")->assertOk()->assertSee('Ödeme bekleniyor');
+    }
 }

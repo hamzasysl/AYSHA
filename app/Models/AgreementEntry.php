@@ -17,7 +17,9 @@ class AgreementEntry extends Model
         'expense' => 'Ekstra gider',
     ];
 
-    protected $fillable = ['agreement_id', 'entry_date', 'kind', 'label', 'amount'];
+    public const STATUSES = ['done' => 'Yapıldı', 'pending' => 'Ödeme bekleniyor'];
+
+    protected $fillable = ['agreement_id', 'entry_date', 'kind', 'status', 'label', 'amount'];
 
     protected function casts(): array
     {
@@ -34,9 +36,23 @@ class AgreementEntry extends Model
         return self::KINDS[$this->kind] ?? $this->kind;
     }
 
-    /** Gider eksi, diğerleri artı. */
+    public function getStatusLabelAttribute(): string
+    {
+        return self::STATUSES[$this->status] ?? $this->status;
+    }
+
+    public function getIsDoneAttribute(): bool
+    {
+        return $this->status === 'done';
+    }
+
+    /** Gider eksi, diğerleri artı. Bekleyen kayıtlar toplama girmez. */
     public function getSignedAmountAttribute(): float
     {
+        if (! $this->is_done) {
+            return 0.0;
+        }
+
         return round((float) $this->amount * ($this->kind === 'expense' ? -1 : 1), 2);
     }
 }

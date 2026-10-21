@@ -77,6 +77,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/anlasmalar/{agreement}', [AgreementController::class, 'update'])->name('agreements.update');
         Route::post('/anlasmalar/{agreement}/kayit', [AgreementController::class, 'storeEntry'])->name('agreements.entries.store');
         Route::patch('/anlasmalar/kayit/{entry}', [AgreementController::class, 'updateEntry'])->name('agreements.entries.update');
+        Route::post('/anlasmalar/kayit/{entry}/durum', [AgreementController::class, 'setEntryStatus'])->name('agreements.entries.status');
 
         Route::resource('performans', PerformanceReviewController::class)->names('reviews')->parameters(['performans' => 'review'])->only(['create', 'store', 'edit', 'update']);
         Route::resource('izinler', LeaveController::class)->names('leaves')->parameters(['izinler' => 'leave'])->only(['create', 'store', 'edit', 'update']);
