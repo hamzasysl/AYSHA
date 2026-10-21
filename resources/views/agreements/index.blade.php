@@ -25,11 +25,10 @@
         </x-slot:actions>
     @endcan
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-4 sm:grid-cols-3">
         <x-stat-card label="Sürekli Anlaşma" :value="$stats['recurring'].' şirket'" icon="fa-repeat" color="brand" :hint="$stats['one_time'].' tek seferlik'" />
         <x-stat-card label="Aylık Bedel (KDV hariç)" :value="number_format($stats['monthly_net'], 2, ',', '.').' ₺'" icon="fa-file-invoice-dollar" color="sky" :hint="'KDV dahil '.number_format($stats['monthly_gross'], 2, ',', '.').' ₺'" />
-        <x-stat-card :label="$label.' Ödemesi'" :value="number_format($stats['paid'], 2, ',', '.').' ₺'" icon="fa-hand-holding-dollar" color="emerald" :hint="'Ekstra gelir '.number_format($stats['income'], 2, ',', '.').' ₺'" />
-        <x-stat-card :label="$label.' Ekstra Gider'" :value="number_format($stats['expense'], 2, ',', '.').' ₺'" icon="fa-arrow-trend-down" color="amber" :hint="'Net '.number_format($stats['paid'] + $stats['income'] - $stats['expense'], 2, ',', '.').' ₺'" />
+        <x-stat-card :label="$label.' Ödemesi'" :value="number_format($stats['paid'], 2, ',', '.').' ₺'" icon="fa-hand-holding-dollar" color="emerald" hint="Şirketlerden gelen ödemeler" />
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
@@ -52,15 +51,15 @@
                 <thead><tr>
                     <th class="th">Şirket</th><th class="th">Tür</th><th class="th text-right">Alan</th><th class="th text-right">m² Fiyatı</th>
                     <th class="th text-right">KDV Hariç</th><th class="th text-right">KDV Dahil</th>
-                    <th class="th text-right" title="{{ $label }} içinde yapılan ödeme">Ödeme</th><th class="th" title="{{ $label }} içindeki ekstra gelir / gider">Ekstra</th><th class="th text-right">İşlem</th>
+                    <th class="th text-right" title="{{ $label }} içinde yapılan ödeme">Ödeme</th><th class="th text-right">İşlem</th>
                 </tr></thead>
                 <tbody class="divide-y divide-slate-100">
                 @forelse ($agreements as $a)
-                    @php $paid = $a->paid($year, $month); $inc = $a->extraIncome($year, $month); $exp = $a->extraExpense($year, $month); @endphp
+                    @php $paid = $a->paid($year, $month); @endphp
                     <tr class="hover:bg-slate-50/70" x-data="{ edit: false }">
                         <td class="td whitespace-nowrap">
                             <a href="{{ route('agreements.show', $a) }}" class="font-medium text-slate-900 hover:text-brand-600">{{ $a->name }}</a>
-                            <div class="text-[11px] text-slate-500">{{ $a->contact_name ?: ($a->address ?: '—') }}@if ($a->status === 'passive') · <span class="text-slate-400">pasif</span>@endif</div>
+                            <div class="text-[11px] text-slate-500">{{ $a->contact_name ?: '—' }}@if ($a->status === 'passive') · <span class="text-slate-400">pasif</span>@endif</div>
                         </td>
                         <td class="td whitespace-nowrap"><span class="badge{{ $a->type === 'recurring' ? '-info' : '' }}"><i class="fa-solid {{ $a->type === 'recurring' ? 'fa-repeat' : 'fa-1' }}"></i>{{ $a->type_label }}</span></td>
                         <td class="td text-right tabular-nums">{{ $a->m2 > 0 ? number_format($a->m2, 0, ',', '.').' m²' : '—' }}</td>
@@ -68,11 +67,6 @@
                         <td class="td text-right tabular-nums">@money($a->net_total)</td>
                         <td class="td text-right font-semibold tabular-nums">@money($a->gross_total)<div class="text-[11px] font-normal text-slate-400">%{{ rtrim(rtrim(number_format($a->vat_rate, 2, ',', '.'), '0'), ',') }} KDV</div></td>
                         <td class="td text-right tabular-nums {{ $paid > 0 ? 'font-semibold text-emerald-700' : 'text-slate-400' }}">{{ $paid > 0 ? number_format($paid, 2, ',', '.').' ₺' : '—' }}</td>
-                        <td class="td whitespace-nowrap">
-                            @if ($inc > 0)<span class="badge-ok" title="Ekstra gelir">+@money($inc)</span>@endif
-                            @if ($exp > 0)<span class="badge-danger" title="Ekstra gider">−@money($exp)</span>@endif
-                            @if ($inc <= 0 && $exp <= 0)<span class="text-slate-400">—</span>@endif
-                        </td>
                         <td class="td text-right whitespace-nowrap">
                             <div class="inline-flex items-center gap-1.5">
                                 @can('edit')<button type="button" @click="edit = true" class="btn-icon" title="Düzenle"><i class="fa-solid fa-pen"></i></button>@endcan
@@ -96,7 +90,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="px-5 py-12 text-center text-sm text-slate-500">Bu filtrede anlaşma yok. Sağ üstten <b>Yeni Anlaşma</b> ekleyin.</td></tr>
+                    <tr><td colspan="8" class="px-5 py-12 text-center text-sm text-slate-500">Bu filtrede anlaşma yok. Sağ üstten <b>Yeni Anlaşma</b> ekleyin.</td></tr>
                 @endforelse
                 </tbody>
                 @if ($agreements->isNotEmpty())
@@ -105,7 +99,7 @@
                     <td class="px-4 py-3 text-right tabular-nums">@money($agreements->sum(fn ($a) => $a->net_total))</td>
                     <td class="px-4 py-3 text-right tabular-nums">@money($agreements->sum(fn ($a) => $a->gross_total))</td>
                     <td class="px-4 py-3 text-right tabular-nums text-emerald-700">@money($agreements->sum(fn ($a) => $a->paid($year, $month)))</td>
-                    <td class="px-4 py-3 text-xs font-normal text-slate-500" colspan="2">Ekstra gelir @money($agreements->sum(fn ($a) => $a->extraIncome($year, $month))) · gider @money($agreements->sum(fn ($a) => $a->extraExpense($year, $month)))</td>
+                    <td></td>
                 </tr></tfoot>
                 @endif
             </table>
