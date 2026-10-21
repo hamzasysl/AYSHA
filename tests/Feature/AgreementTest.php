@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Agreement;
-use App\Models\AgreementPayment;
+use App\Models\AgreementEntry;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -30,82 +30,58 @@ class AgreementTest extends TestCase
         $this->assertSame(54000.0, $a->gross_total);
     }
 
-    public function test_extras_change_totals_and_profit(): void
+    public function test_entries_log_payments_and_extras_per_month(): void
     {
         $a = Agreement::factory()->create(['m2' => null, 'm2_rate' => null, 'amount' => 10000, 'vat_rate' => 20]);
 
-        $this->actingAs($this->user)->post("/anlasmalar/{$a->id}/ekstra", ['label' => 'Cam silme', 'kind' => 'charge', 'amount' => '2.000,00', 'recurring' => 1])->assertRedirect();
-        $this->actingAs($this->user)->post("/anlasmalar/{$a->id}/ekstra", ['label' => 'Malzeme', 'kind' => 'cost', 'amount' => '1.500,00', 'recurring' => 1])->assertRedirect();
-        $this->actingAs($this->user)->post("/anlasmalar/{$a->id}/ekstra", ['label' => 'İlk temizlik', 'kind' => 'charge', 'amount' => '5.000,00'])->assertRedirect();
+        foreach ([
+            ['2026-10-05', 'payment', 'Ekim ödemesi', '12.000,00'],
+            ['2026-10-18', 'income', 'Cam silme', '2.000,00'],
+            ['2026-10-20', 'expense', 'Malzeme', '1.500,00'],
+            ['2026-09-05', 'payment', 'Eylül ödemesi', '12.000,00'],
+        ] as [$entry_date, $kind, $label, $amount]) {
+            $this->actingAs($this->user)
+                ->post("/anlasmalar/{$a->id}/kayit", compact('entry_date', 'kind', 'label', 'amount'))
+                ->assertSessionHasNoErrors()->assertRedirect();
+        }
 
         $a->refresh();
-        $this->assertSame(2000.0, $a->extra_charges);      // tek seferlik olan sürekli anlaşmanın aylığına girmez
-        $this->assertSame(1500.0, $a->extra_costs);
-        $this->assertSame(12000.0, $a->net_total);
-        $this->assertSame(14400.0, $a->gross_total);
-        $this->assertSame(10500.0, $a->profit);
-    }
+        $this->assertSame(24000.0, $a->paid());
+        $this->assertSame(12000.0, $a->paid(2026, 10));
+        $this->assertSame(2000.0, $a->extraIncome(2026, 10));
+        $this->assertSame(1500.0, $a->extraExpense(2026, 10));
+        $this->assertSame(12500.0, $a->balance(2026, 10));
 
-    public function test_payments_are_tracked_per_month(): void
-    {
-        $a = Agreement::factory()->create(['amount' => 10000, 'm2' => null, 'm2_rate' => null, 'vat_rate' => 20]);
+        // Anlaşma bedeli ekstralardan etkilenmez: sadece tutar + KDV
+        $this->assertSame(10000.0, $a->net_total);
+        $this->assertSame(12000.0, $a->gross_total);
 
-        $this->actingAs($this->user)->post("/anlasmalar/{$a->id}/tahsilat", [
-            'period_year' => 2026, 'period_month' => 10, 'amount' => '12.000,00', 'status' => 'paid', 'method' => 'transfer',
-        ])->assertSessionHasNoErrors()->assertRedirect();
-
-        $p = AgreementPayment::first();
-        $this->assertSame('12000.00', (string) $p->amount);
-        $this->assertSame('paid', $p->status);
-        $this->assertNotNull($p->paid_at);
-        $this->assertSame('Ekim 2026', $p->period_label);
-
-        // Aynı dönem tekrar gönderilince yeni kayıt açmaz, günceller
-        $this->actingAs($this->user)->post("/anlasmalar/{$a->id}/tahsilat", [
-            'period_year' => 2026, 'period_month' => 10, 'amount' => '11.000,00', 'status' => 'pending',
-        ])->assertRedirect();
-        $this->assertSame(1, AgreementPayment::count());
-        $this->assertNull(AgreementPayment::first()->paid_at);
-
-        $this->actingAs($this->user)->post("/anlasmalar/tahsilat/{$p->id}/durum", ['status' => 'paid'])->assertRedirect();
-        $this->assertSame('paid', $p->fresh()->status);
-    }
-
-    public function test_generate_creates_pending_rows_for_active_recurring_only_and_is_idempotent(): void
-    {
-        Agreement::factory()->count(2)->create(['amount' => 10000, 'm2' => null, 'm2_rate' => null]);
-        Agreement::factory()->create(['type' => 'one_time', 'amount' => 5000, 'm2' => null, 'm2_rate' => null]);
-        Agreement::factory()->create(['status' => 'passive', 'amount' => 5000, 'm2' => null, 'm2_rate' => null]);
-
-        $this->actingAs($this->user)->post('/anlasmalar/tahsilat-olustur', ['year' => 2026, 'month' => 10])
-            ->assertRedirect('/anlasmalar?year=2026&month=10')->assertSessionHas('success');
-        $this->assertSame(2, AgreementPayment::count());
-
-        $this->actingAs($this->user)->post('/anlasmalar/tahsilat-olustur', ['year' => 2026, 'month' => 10]);
-        $this->assertSame(2, AgreementPayment::count());
+        $entry = AgreementEntry::where('label', 'Malzeme')->first();
+        $this->actingAs($this->user)->delete("/anlasmalar/kayit/{$entry->id}")->assertRedirect();
+        $this->assertSame(0.0, $a->fresh()->extraExpense());
     }
 
     public function test_index_and_show_render_with_notes(): void
     {
         $a = Agreement::factory()->create(['name' => 'Aselsan Genel Müdürlük', 'm2' => 450, 'm2_rate' => 100]);
         $this->actingAs($this->user)->post("/notlar/agreements/{$a->id}", ['content' => 'Sözleşme yenilenecek'])->assertRedirect();
+        $this->actingAs($this->user)->post("/anlasmalar/{$a->id}/kayit", ['entry_date' => '2026-10-05', 'kind' => 'payment', 'label' => 'Ekim ödemesi', 'amount' => '54.000,00']);
 
-        $this->actingAs($this->user)->get('/anlasmalar')->assertOk()
-            ->assertSee('Aselsan Genel Müdürlük')->assertSee('54.000,00 ₺');
+        $this->actingAs($this->user)->get('/anlasmalar?year=2026&month=10')->assertOk()
+            ->assertSee('Aselsan Genel Müdürlük')->assertSee('54.000,00 ₺')->assertSee('Şirket');
         $this->actingAs($this->user)->get("/anlasmalar/{$a->id}")->assertOk()
-            ->assertSee('Sözleşme yenilenecek')->assertSee('450 m²');
+            ->assertSee('Sözleşme yenilenecek')->assertSee('450 m²')->assertSee('Ekim ödemesi')->assertSee('Ekim 2026');
     }
 
-    public function test_deleting_agreement_removes_children_and_notes(): void
+    public function test_deleting_agreement_removes_entries_and_notes(): void
     {
         $a = Agreement::factory()->create();
         $this->actingAs($this->user)->post("/notlar/agreements/{$a->id}", ['content' => 'not'])->assertRedirect();
-        $this->actingAs($this->user)->post("/anlasmalar/{$a->id}/ekstra", ['label' => 'x', 'kind' => 'cost', 'amount' => '100']);
-        $this->actingAs($this->user)->post("/anlasmalar/{$a->id}/tahsilat", ['period_year' => 2026, 'period_month' => 10, 'amount' => '100', 'status' => 'pending']);
+        $this->actingAs($this->user)->post("/anlasmalar/{$a->id}/kayit", ['entry_date' => '2026-10-05', 'kind' => 'payment', 'amount' => '100']);
 
         $this->actingAs($this->user)->delete("/anlasmalar/{$a->id}")->assertRedirect('/anlasmalar');
         $this->assertSame(0, Agreement::count());
-        $this->assertSame(0, AgreementPayment::count());
+        $this->assertSame(0, AgreementEntry::count());
         $this->assertSame(0, \App\Models\Note::count());
     }
 
@@ -117,6 +93,7 @@ class AgreementTest extends TestCase
         $this->actingAs($viewer)->get('/anlasmalar')->assertOk()->assertDontSee('Yeni Anlaşma');
         $this->actingAs($viewer)->get("/anlasmalar/{$a->id}")->assertOk();
         $this->actingAs($viewer)->post('/anlasmalar', ['name' => 'X', 'type' => 'recurring', 'status' => 'active', 'amount' => '1'])->assertForbidden();
+        $this->actingAs($viewer)->post("/anlasmalar/{$a->id}/kayit", ['entry_date' => '2026-10-05', 'kind' => 'payment', 'amount' => '1'])->assertForbidden();
         $this->actingAs($viewer)->delete("/anlasmalar/{$a->id}")->assertForbidden();
     }
 }

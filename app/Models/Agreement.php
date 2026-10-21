@@ -42,14 +42,9 @@ class Agreement extends Model
         static::deleting(fn (Agreement $a) => $a->deleteNotes());
     }
 
-    public function extras(): HasMany
+    public function entries(): HasMany
     {
-        return $this->hasMany(AgreementExtra::class)->orderBy('kind')->orderBy('id');
-    }
-
-    public function payments(): HasMany
-    {
-        return $this->hasMany(AgreementPayment::class)->orderByDesc('period_year')->orderByDesc('period_month')->orderByDesc('id');
+        return $this->hasMany(AgreementEntry::class)->orderByDesc('entry_date')->orderByDesc('id');
     }
 
     public function scopeActive(Builder $q): Builder
@@ -67,30 +62,10 @@ class Agreement extends Model
         return self::STATUSES[$this->status] ?? $this->status;
     }
 
-    /** Sürekli anlaşmalarda her ay tekrar eden ekstralar; tek seferliklerde hepsi. */
-    private function countedExtras(string $kind)
-    {
-        $extras = $this->relationLoaded('extras') ? $this->extras : $this->extras()->get();
-
-        return $extras->where('kind', $kind)->when($this->type === 'recurring', fn ($c) => $c->where('recurring', true));
-    }
-
-    /** Faturaya eklenen ekstra ücretler (KDV hariç). */
-    public function getExtraChargesAttribute(): float
-    {
-        return round((float) $this->countedExtras('charge')->sum('amount'), 2);
-    }
-
-    /** Bize maliyet olan ekstra giderler. */
-    public function getExtraCostsAttribute(): float
-    {
-        return round((float) $this->countedExtras('cost')->sum('amount'), 2);
-    }
-
-    /** KDV hariç toplam (ana tutar + ekstra ücretler). */
+    /** Aylık (ya da tek seferlik) anlaşma bedeli, KDV hariç. */
     public function getNetTotalAttribute(): float
     {
-        return round((float) $this->amount + $this->extra_charges, 2);
+        return round((float) $this->amount, 2);
     }
 
     public function getVatAmountAttribute(): float
@@ -98,22 +73,42 @@ class Agreement extends Model
         return round($this->net_total * (float) $this->vat_rate / 100, 2);
     }
 
-    /** KDV dahil toplam — sürekli anlaşmalarda aylık tutar. */
+    /** KDV dahil anlaşma bedeli. */
     public function getGrossTotalAttribute(): float
     {
         return round($this->net_total + $this->vat_amount, 2);
     }
 
-    /** Ekstra giderler düşülünce kalan (KDV hariç). */
-    public function getProfitAttribute(): float
+    private function entriesOf(string $kind, ?int $year = null, ?int $month = null): float
     {
-        return round($this->net_total - $this->extra_costs, 2);
+        $entries = $this->relationLoaded('entries') ? $this->entries : $this->entries()->get();
+
+        return round((float) $entries
+            ->where('kind', $kind)
+            ->when($year, fn ($c) => $c->filter(fn ($e) => (int) $e->entry_date->year === $year))
+            ->when($month, fn ($c) => $c->filter(fn ($e) => (int) $e->entry_date->month === $month))
+            ->sum(fn ($e) => (float) $e->amount), 2);
     }
 
-    public function paymentFor(int $year, ?int $month): ?AgreementPayment
+    /** Alınan ödemeler; dönem verilirse o aya ait olanlar. */
+    public function paid(?int $year = null, ?int $month = null): float
     {
-        $payments = $this->relationLoaded('payments') ? $this->payments : $this->payments()->get();
+        return $this->entriesOf('payment', $year, $month);
+    }
 
-        return $payments->first(fn ($p) => (int) $p->period_year === $year && (int) $p->period_month === $month);
+    public function extraIncome(?int $year = null, ?int $month = null): float
+    {
+        return $this->entriesOf('income', $year, $month);
+    }
+
+    public function extraExpense(?int $year = null, ?int $month = null): float
+    {
+        return $this->entriesOf('expense', $year, $month);
+    }
+
+    /** Alınan ödeme + ekstra gelir − ekstra gider. */
+    public function balance(?int $year = null, ?int $month = null): float
+    {
+        return round($this->paid($year, $month) + $this->extraIncome($year, $month) - $this->extraExpense($year, $month), 2);
     }
 }

@@ -1,6 +1,8 @@
 @php
     $months = \App\Models\SalaryPayment::MONTHS;
     $f = fn ($v) => rtrim(rtrim(number_format((float) $v, 2, ',', '.'), '0'), ',');
+    $byMonth = $agreement->entries->groupBy(fn ($e) => $e->entry_date->format('Y-m'));
+    $kindTone = ['payment' => 'badge-ok', 'income' => 'badge-info', 'expense' => 'badge-danger'];
 @endphp
 <x-app-layout :title="$agreement->name" :subtitle="$agreement->type_label.' anlaşma'.($agreement->status === 'passive' ? ' · pasif' : '')" section="Anlaşmalar">
     <x-slot:actions>
@@ -24,21 +26,21 @@
         @endcan
         @can('delete')
             <x-confirm-form :action="route('agreements.destroy', $agreement)" title="Anlaşmayı sil"
-                :message="$agreement->name.' anlaşması, ekstraları, tahsilatları ve notları silinecek.'" button="Evet, sil" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i> Sil</x-confirm-form>
+                :message="$agreement->name.' anlaşması, kayıtları ve notları silinecek.'" button="Evet, sil" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i> Sil</x-confirm-form>
         @endcan
     </x-slot:actions>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-stat-card label="Alan" :value="$agreement->m2 > 0 ? number_format($agreement->m2, 0, ',', '.').' m²' : '—'" icon="fa-ruler-combined" color="violet" :hint="$agreement->m2_rate > 0 ? $f($agreement->m2_rate).' ₺ / m²' : 'm² fiyatı girilmedi'" />
-        <x-stat-card label="KDV Hariç" :value="number_format($agreement->net_total, 2, ',', '.').' ₺'" icon="fa-file-invoice" color="sky" :hint="$agreement->extra_charges > 0 ? 'Ana '.number_format($agreement->amount, 2, ',', '.').' + ekstra '.number_format($agreement->extra_charges, 2, ',', '.') : 'Ekstra ücret yok'" />
-        <x-stat-card label="KDV Dahil" :value="number_format($agreement->gross_total, 2, ',', '.').' ₺'" icon="fa-percent" color="brand" :hint="'%'.$f($agreement->vat_rate).' KDV = '.number_format($agreement->vat_amount, 2, ',', '.').' ₺'" />
-        <x-stat-card label="Ekstra Giderler" :value="number_format($agreement->extra_costs, 2, ',', '.').' ₺'" icon="fa-arrow-trend-down" color="amber" :hint="'Kalan (KDV hariç) '.number_format($agreement->profit, 2, ',', '.').' ₺'" />
+        <x-stat-card :label="$agreement->type === 'recurring' ? 'Aylık Bedel' : 'Anlaşma Bedeli'" :value="number_format($agreement->gross_total, 2, ',', '.').' ₺'" icon="fa-file-invoice" color="brand" :hint="'KDV hariç '.number_format($agreement->net_total, 2, ',', '.').' ₺ · %'.$f($agreement->vat_rate).' KDV'" />
+        <x-stat-card label="Toplam Alınan Ödeme" :value="number_format($agreement->paid(), 2, ',', '.').' ₺'" icon="fa-hand-holding-dollar" color="emerald" :hint="'Ekstra gelir '.number_format($agreement->extraIncome(), 2, ',', '.').' ₺'" />
+        <x-stat-card label="Toplam Ekstra Gider" :value="number_format($agreement->extraExpense(), 2, ',', '.').' ₺'" icon="fa-arrow-trend-down" color="amber" :hint="'Net '.number_format($agreement->balance(), 2, ',', '.').' ₺'" />
     </div>
 
     <div class="grid gap-6 xl:grid-cols-3">
-        {{-- Kurum bilgileri --}}
+        {{-- Şirket bilgileri --}}
         <div class="card">
-            <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-semibold text-slate-900"><i class="fa-solid fa-building"></i>Kurum</h2></div>
+            <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-semibold text-slate-900"><i class="fa-solid fa-building"></i>Şirket</h2></div>
             <dl class="divide-y divide-slate-50 px-5 py-2 text-sm">
                 @foreach ([
                     ['Yetkili', $agreement->contact_name],
@@ -55,99 +57,56 @@
             </dl>
         </div>
 
-        {{-- Ekstralar --}}
+        {{-- Kayıtlar: hangi ay ne ödendi, ekstra gelir / gider --}}
         <div class="card xl:col-span-2">
-            <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-semibold text-slate-900"><i class="fa-solid fa-plus-minus"></i>Ekstra Ücret &amp; Giderler</h2></div>
+            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                <h2 class="font-semibold text-slate-900"><i class="fa-solid fa-list-ul"></i>Kayıtlar</h2>
+                <span class="text-xs text-slate-500">Ödeme @money($agreement->paid()) · ekstra gelir @money($agreement->extraIncome()) · ekstra gider @money($agreement->extraExpense())</span>
+            </div>
             <table class="min-w-full table-hover">
-                <thead><tr><th class="th">Açıklama</th><th class="th">Tür</th><th class="th">Tekrar</th><th class="th text-right">Tutar</th>@can('delete')<th class="th text-right">İşlem</th>@endcan</tr></thead>
+                <thead><tr><th class="th">Tarih</th><th class="th">Tür</th><th class="th">Açıklama</th><th class="th text-right">Tutar</th>@can('delete')<th class="th text-right">İşlem</th>@endcan</tr></thead>
                 <tbody class="divide-y divide-slate-100">
-                @forelse ($agreement->extras as $x)
-                    <tr>
-                        <td class="td font-medium text-slate-800">{{ $x->label }}</td>
-                        <td class="td"><span class="{{ $x->kind === 'charge' ? 'badge-ok' : 'badge-danger' }}">{{ $x->kind_label }}</span></td>
-                        <td class="td text-xs text-slate-500">{{ $x->recurring ? 'Her ay' : 'Tek sefer' }}</td>
-                        <td class="td text-right font-semibold tabular-nums {{ $x->kind === 'charge' ? 'text-emerald-700' : 'text-red-600' }}">{{ $x->kind === 'charge' ? '+' : '−' }}@money($x->amount)</td>
-                        @can('delete')
-                            <td class="td text-right"><x-confirm-form :action="route('agreements.extras.destroy', $x)" title="Ekstrayı sil" :message="$x->label.' silinecek.'"><i class="fa-solid fa-trash"></i></x-confirm-form></td>
-                        @endcan
+                @forelse ($byMonth as $key => $group)
+                    @php $d = \Illuminate\Support\Carbon::parse($key.'-01'); @endphp
+                    <tr class="bg-slate-50/70">
+                        <td class="px-4 py-2 text-xs font-semibold text-slate-600" colspan="3">{{ $months[(int) $d->month].' '.$d->year }}</td>
+                        <td class="px-4 py-2 text-right text-xs font-semibold tabular-nums text-slate-700">@money($group->sum(fn ($e) => $e->signed_amount))</td>
+                        @can('delete')<td></td>@endcan
                     </tr>
+                    @foreach ($group as $e)
+                        <tr>
+                            <td class="td whitespace-nowrap text-slate-600">{{ $e->entry_date->format('d.m.Y') }}</td>
+                            <td class="td whitespace-nowrap"><span class="{{ $kindTone[$e->kind] }}">{{ $e->kind_label }}</span></td>
+                            <td class="td max-w-[260px] truncate text-slate-700" title="{{ $e->label }}">{{ $e->label ?: '—' }}</td>
+                            <td class="td text-right font-semibold tabular-nums {{ $e->kind === 'expense' ? 'text-red-600' : 'text-emerald-700' }}">{{ $e->kind === 'expense' ? '−' : '+' }}@money($e->amount)</td>
+                            @can('delete')
+                                <td class="td text-right"><x-confirm-form :action="route('agreements.entries.destroy', $e)" title="Kaydı sil" :message="$e->entry_date->format('d.m.Y').' · '.$e->kind_label.' · '.number_format($e->amount, 2, ',', '.').' ₺ silinecek.'"><i class="fa-solid fa-trash"></i></x-confirm-form></td>
+                            @endcan
+                        </tr>
+                    @endforeach
                 @empty
-                    <tr><td colspan="{{ auth()->user()->can('delete') ? 5 : 4 }}" class="px-5 py-8 text-center text-sm text-slate-500">Ekstra ücret veya gider eklenmemiş.</td></tr>
+                    <tr><td colspan="{{ auth()->user()->can('delete') ? 5 : 4 }}" class="px-5 py-8 text-center text-sm text-slate-500">Henüz kayıt yok. Aşağıdan ödeme, ekstra gelir veya gider ekleyin.</td></tr>
                 @endforelse
                 </tbody>
             </table>
             @can('edit')
-                <form method="POST" action="{{ route('agreements.extras.store', $agreement) }}" class="grid gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_150px_150px_auto]">
+                <form method="POST" action="{{ route('agreements.entries.store', $agreement) }}" class="grid gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:grid-cols-[150px_170px_minmax(0,1fr)_150px]">
                     @csrf
-                    <input name="label" required placeholder="Örn. Cam silme, malzeme bedeli" class="form-input">
-                    <x-ui-select name="kind" :search="false">@foreach (\App\Models\AgreementExtra::KINDS as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</x-ui-select>
-                    <input name="amount" required inputmode="decimal" placeholder="0,00" class="form-input text-right">
-                    <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" name="recurring" value="1" checked class="row-check"> Her ay</label>
-                    <div class="sm:col-span-4 flex justify-end"><button class="btn-success btn-sm"><i class="fa-solid fa-plus"></i> Ekstra ekle</button></div>
+                    <div><label class="form-label">Tarih *</label><x-date-input name="entry_date" :value="now()->toDateString()" :required="true" /></div>
+                    <div><label class="form-label">Tür *</label>
+                        <x-ui-select name="kind" :search="false">@foreach (\App\Models\AgreementEntry::KINDS as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</x-ui-select></div>
+                    <div><label class="form-label">Açıklama</label><input name="label" placeholder="Örn. Ekim ayı ödemesi, cam silme, malzeme" class="form-input"></div>
+                    <div><label class="form-label">Tutar (₺) *</label><input name="amount" required inputmode="decimal" placeholder="{{ number_format($agreement->gross_total, 2, ',', '.') }}" class="form-input text-right"></div>
+                    <div class="sm:col-span-4 flex justify-end"><button class="btn-success btn-sm"><i class="fa-solid fa-plus"></i> Kaydet</button></div>
                 </form>
             @endcan
         </div>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-3">
-        {{-- Tahsilatlar --}}
-        <div class="card xl:col-span-2">
-            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                <h2 class="font-semibold text-slate-900"><i class="fa-solid fa-hand-holding-dollar"></i>Tahsilatlar</h2>
-                <span class="text-xs text-slate-500">Tahsil edilen @money($agreement->payments->where('status', 'paid')->sum(fn ($p) => (float) $p->amount)) · bekleyen @money($agreement->payments->where('status', 'pending')->sum(fn ($p) => (float) $p->amount))</span>
-            </div>
-            <table class="min-w-full table-hover">
-                <thead><tr><th class="th">Dönem</th><th class="th text-right">Tutar</th><th class="th">Durum</th><th class="th">Tahsilat</th><th class="th">Açıklama</th>@can('delete')<th class="th text-right">İşlem</th>@endcan</tr></thead>
-                <tbody class="divide-y divide-slate-100">
-                @forelse ($agreement->payments as $p)
-                    <tr>
-                        <td class="td whitespace-nowrap font-medium text-slate-800">{{ $p->period_label }}</td>
-                        <td class="td text-right font-semibold tabular-nums">@money($p->amount)</td>
-                        <td class="td whitespace-nowrap">
-                            @can('edit')
-                                <form method="POST" action="{{ route('agreements.payments.status', $p) }}">@csrf
-                                    <x-ui-select name="status" :search="false" :submit="true" width="auto" class="status-select status-{{ $p->status }}">@foreach (\App\Models\AgreementPayment::STATUSES as $k => $l)<option value="{{ $k }}" @selected($p->status === $k)>{{ $l }}</option>@endforeach</x-ui-select>
-                                </form>
-                            @else
-                                <span class="{{ $p->status === 'paid' ? 'badge-ok' : 'badge-warn' }}">{{ $p->status_label }}</span>
-                            @endcan
-                        </td>
-                        <td class="td whitespace-nowrap text-xs text-slate-500">@if ($p->paid_at){{ $p->paid_at->format('d.m.Y') }}@if ($p->method_label) · {{ $p->method_label }}@endif @else — @endif</td>
-                        <td class="td max-w-[200px] truncate text-xs text-slate-500" title="{{ $p->note }}">{{ $p->note ?: '—' }}</td>
-                        @can('delete')
-                            <td class="td text-right"><x-confirm-form :action="route('agreements.payments.destroy', $p)" title="Tahsilatı sil" :message="$p->period_label.' tahsilat kaydı silinecek.'"><i class="fa-solid fa-trash"></i></x-confirm-form></td>
-                        @endcan
-                    </tr>
-                @empty
-                    <tr><td colspan="{{ auth()->user()->can('delete') ? 6 : 5 }}" class="px-5 py-8 text-center text-sm text-slate-500">Henüz tahsilat kaydı yok.</td></tr>
-                @endforelse
-                </tbody>
-            </table>
-            @can('edit')
-                <form method="POST" action="{{ route('agreements.payments.store', $agreement) }}" class="grid gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:grid-cols-3">
-                    @csrf
-                    <div><label class="form-label">Ay</label>
-                        <x-ui-select name="period_month" :search="false" placeholder="—"><option value="">— (tek seferlik)</option>@foreach ($months as $k => $l)<option value="{{ $k }}" @selected($k === (int) now()->month)>{{ $l }}</option>@endforeach</x-ui-select></div>
-                    <div><label class="form-label">Yıl</label>
-                        <x-ui-select name="period_year" :search="false">@foreach (range(now()->year + 1, 2024) as $y)<option value="{{ $y }}" @selected($y === (int) now()->year)>{{ $y }}</option>@endforeach</x-ui-select></div>
-                    <div><label class="form-label">Tutar (KDV dahil)</label><input name="amount" value="{{ number_format($agreement->gross_total, 2, ',', '.') }}" inputmode="decimal" class="form-input text-right"></div>
-                    <div><label class="form-label">Durum</label>
-                        <x-ui-select name="status" :search="false">@foreach (\App\Models\AgreementPayment::STATUSES as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</x-ui-select></div>
-                    <div><label class="form-label">Tahsilat tarihi</label><x-date-input name="paid_at" /></div>
-                    <div><label class="form-label">Yöntem</label>
-                        <x-ui-select name="method" :search="false" placeholder="—"><option value="">—</option>@foreach (\App\Models\AgreementPayment::METHODS as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</x-ui-select></div>
-                    <div class="sm:col-span-3"><label class="form-label">Açıklama</label><input name="note" placeholder="İsteğe bağlı" class="form-input"></div>
-                    <div class="sm:col-span-3 flex justify-end"><button class="btn-success btn-sm"><i class="fa-solid fa-plus"></i> Tahsilat ekle / güncelle</button></div>
-                </form>
-            @endcan
-        </div>
-
-        {{-- Notlar --}}
-        <div class="card">
-            <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-semibold text-slate-900"><i class="fa-regular fa-note-sticky"></i>Notlar</h2></div>
-            <div class="p-5">
-                <x-notes-panel :model="$agreement" :action="route('notes.store', ['type' => 'agreements', 'id' => $agreement->id])" :key="'agreements-'.$agreement->id" compact />
-            </div>
+    <div class="card">
+        <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-semibold text-slate-900"><i class="fa-regular fa-note-sticky"></i>Notlar</h2></div>
+        <div class="p-5">
+            <x-notes-panel :model="$agreement" :action="route('notes.store', ['type' => 'agreements', 'id' => $agreement->id])" :key="'agreements-'.$agreement->id" compact />
         </div>
     </div>
 </x-app-layout>

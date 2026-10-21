@@ -4,9 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AgreementRequest;
 use App\Models\Agreement;
-use App\Models\AgreementExtra;
-use App\Models\AgreementPayment;
-use App\Models\SalaryPayment;
+use App\Models\AgreementEntry;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,24 +19,22 @@ class AgreementController extends Controller
         $year = (int) $request->get('year', now()->year);
         $month = (int) $request->get('month', now()->month);
 
-        $all = Agreement::with(['extras', 'payments', 'notes'])->orderBy('name')->get();
+        $all = Agreement::with(['entries', 'notes'])->orderBy('name')->get();
         $agreements = $all
             ->when($type, fn ($c) => $c->where('type', $type))
             ->when($status, fn ($c) => $c->where('status', $status))
             ->values();
 
         $activeRecurring = $all->where('status', 'active')->where('type', 'recurring');
-        $periodPayments = $all->flatMap->payments
-            ->filter(fn ($p) => (int) $p->period_year === $year && (int) $p->period_month === $month);
 
         $stats = [
             'recurring' => $activeRecurring->count(),
             'one_time' => $all->where('status', 'active')->where('type', 'one_time')->count(),
             'monthly_net' => $activeRecurring->sum(fn ($a) => $a->net_total),
             'monthly_gross' => $activeRecurring->sum(fn ($a) => $a->gross_total),
-            'monthly_costs' => $activeRecurring->sum(fn ($a) => $a->extra_costs),
-            'collected' => $periodPayments->where('status', 'paid')->sum(fn ($p) => (float) $p->amount),
-            'pending' => $periodPayments->where('status', 'pending')->sum(fn ($p) => (float) $p->amount),
+            'paid' => $all->sum(fn ($a) => $a->paid($year, $month)),
+            'income' => $all->sum(fn ($a) => $a->extraIncome($year, $month)),
+            'expense' => $all->sum(fn ($a) => $a->extraExpense($year, $month)),
         ];
 
         $counts = [
@@ -53,7 +49,7 @@ class AgreementController extends Controller
 
     public function show(Agreement $agreement)
     {
-        $agreement->load(['extras', 'payments', 'notes']);
+        $agreement->load(['entries', 'notes']);
 
         return view('agreements.show', compact('agreement'));
     }
@@ -80,131 +76,39 @@ class AgreementController extends Controller
         return redirect()->route('agreements.index')->with('success', $name.' anlaşması silindi.');
     }
 
-    // ---- Ekstra ücret / gider ----
+    // ---- Hareketler (ödeme / ekstra gelir / ekstra gider) ----
 
-    public function storeExtra(Request $request, Agreement $agreement): RedirectResponse
+    public function storeEntry(Request $request, Agreement $agreement): RedirectResponse
     {
-        $data = $this->extraData($request);
-        $agreement->extras()->create($data);
+        $entry = $agreement->entries()->create($this->entryData($request));
 
-        return back()->with('success', $data['label'].' eklendi.');
+        return back()->with('success', $entry->kind_label.' kaydedildi.');
     }
 
-    public function updateExtra(Request $request, AgreementExtra $extra): RedirectResponse
+    public function updateEntry(Request $request, AgreementEntry $entry): RedirectResponse
     {
-        $extra->update($this->extraData($request));
+        $entry->update($this->entryData($request));
 
-        return back()->with('success', 'Ekstra güncellendi.');
+        return back()->with('success', 'Kayıt güncellendi.');
     }
 
-    public function destroyExtra(AgreementExtra $extra): RedirectResponse
+    public function destroyEntry(AgreementEntry $entry): RedirectResponse
     {
-        $extra->delete();
+        $entry->delete();
 
-        return back()->with('success', 'Ekstra silindi.');
+        return back()->with('success', 'Kayıt silindi.');
     }
 
-    private function extraData(Request $request): array
+    private function entryData(Request $request): array
     {
         $request->merge(['amount' => str_replace(['.', ','], ['', '.'], preg_replace('/[^\d,.]/', '', (string) $request->input('amount')))]);
 
         return $request->validate([
-            'label' => ['required', 'string', 'max:120'],
-            'kind' => ['required', Rule::in(array_keys(AgreementExtra::KINDS))],
+            'entry_date' => ['required', 'date'],
+            'kind' => ['required', Rule::in(array_keys(AgreementEntry::KINDS))],
+            'label' => ['nullable', 'string', 'max:150'],
             'amount' => ['required', 'numeric', 'min:0', 'max:99999999'],
-            'recurring' => ['nullable', 'boolean'],
-        ], [], ['label' => 'açıklama', 'kind' => 'tür', 'amount' => 'tutar']) + ['recurring' => $request->boolean('recurring')];
-    }
-
-    // ---- Tahsilatlar ----
-
-    public function storePayment(Request $request, Agreement $agreement): RedirectResponse
-    {
-        $data = $this->paymentData($request, $agreement);
-
-        $existing = $agreement->payments()
-            ->where('period_year', $data['period_year'])
-            ->where('period_month', $data['period_month'])
-            ->first();
-
-        if ($existing) {
-            $existing->update($data);
-
-            return back()->with('success', $existing->period_label.' tahsilatı güncellendi.');
-        }
-
-        $payment = $agreement->payments()->create($data);
-
-        return back()->with('success', $payment->period_label.' tahsilatı eklendi.');
-    }
-
-    public function updatePayment(Request $request, AgreementPayment $payment): RedirectResponse
-    {
-        $payment->update($this->paymentData($request, $payment->agreement));
-
-        return back()->with('success', 'Tahsilat güncellendi.');
-    }
-
-    /** Satırdaki açılır menü: bekliyor <-> tahsil edildi. */
-    public function setPaymentStatus(Request $request, AgreementPayment $payment): RedirectResponse
-    {
-        $data = $request->validate(['status' => ['required', Rule::in(array_keys(AgreementPayment::STATUSES))]]);
-        $payment->status = $data['status'];
-        $payment->save();
-
-        return back()->with('success', $payment->agreement->name.' · '.$payment->period_label.' → '.$payment->status_label);
-    }
-
-    public function destroyPayment(AgreementPayment $payment): RedirectResponse
-    {
-        $payment->delete();
-
-        return back()->with('success', 'Tahsilat silindi.');
-    }
-
-    private function paymentData(Request $request, Agreement $agreement): array
-    {
-        $request->merge([
-            'amount' => str_replace(['.', ','], ['', '.'], preg_replace('/[^\d,.]/', '', (string) $request->input('amount'))) ?: $agreement->gross_total,
-            'period_month' => $request->input('period_month') ?: null,
-        ]);
-
-        return $request->validate([
-            'period_year' => ['required', 'integer', 'between:2020,2100'],
-            'period_month' => ['nullable', 'integer', 'between:1,12'],
-            'amount' => ['required', 'numeric', 'min:0', 'max:99999999'],
-            'status' => ['required', Rule::in(array_keys(AgreementPayment::STATUSES))],
-            'paid_at' => ['nullable', 'date'],
-            'method' => ['nullable', Rule::in(array_keys(AgreementPayment::METHODS))],
-            'note' => ['nullable', 'string', 'max:255'],
-        ], [], ['period_year' => 'yıl', 'period_month' => 'ay', 'amount' => 'tutar', 'status' => 'durum']);
-    }
-
-    /** Sürekli anlaşmaların seçilen ay için bekleyen tahsilat kaydını açar. */
-    public function generatePayments(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'year' => ['required', 'integer', 'between:2020,2100'],
-            'month' => ['required', 'integer', 'between:1,12'],
-        ]);
-
-        $created = 0;
-        Agreement::active()->where('type', 'recurring')->with('extras')->each(function (Agreement $a) use ($data, &$created) {
-            $exists = $a->payments()->where('period_year', $data['year'])->where('period_month', $data['month'])->exists();
-            if ($exists || $a->gross_total <= 0) {
-                return;
-            }
-            $a->payments()->create([
-                'period_year' => $data['year'], 'period_month' => $data['month'],
-                'amount' => $a->gross_total, 'status' => 'pending',
-            ]);
-            $created++;
-        });
-
-        $label = SalaryPayment::MONTHS[(int) $data['month']].' '.$data['year'];
-
-        return redirect()->route('agreements.index', ['year' => $data['year'], 'month' => $data['month']])
-            ->with('success', $created > 0 ? "{$label} için {$created} tahsilat kaydı açıldı." : "{$label} ayında açılacak yeni tahsilat yok.");
+        ], [], ['entry_date' => 'tarih', 'kind' => 'tür', 'label' => 'açıklama', 'amount' => 'tutar']);
     }
 
     /** Yeni anlaşma formunun varsayılanları. */

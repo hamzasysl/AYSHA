@@ -18,7 +18,7 @@
         get gross() { return Math.round(this.net * (1 + parseMoney(this.vat) / 100) * 100) / 100; },
      }" class="grid grid-cols-2 gap-3">
 
-    <div class="col-span-2"><label class="form-label">Kurum adı *</label><input name="name" value="{{ old('name', $a?->name) }}" required placeholder="Örn. Aselsan Genel Müdürlük" class="form-input"></div>
+    <div class="col-span-2"><label class="form-label">Şirket adı *</label><input name="name" value="{{ old('name', $a?->name) }}" required placeholder="Örn. Aselsan Genel Müdürlük" class="form-input"></div>
 
     <div><label class="form-label">Tür *</label>
         <x-ui-select name="type" :search="false">@foreach (\App\Models\Agreement::TYPES as $k => $l)<option value="{{ $k }}" @selected(old('type', $a?->type ?? 'recurring') === $k)>{{ $l }}</option>@endforeach</x-ui-select></div>
