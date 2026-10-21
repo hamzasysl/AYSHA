@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** Anlaşma hareketi: alınan ödeme, ekstra gelir ya da ekstra gider. */
+/** Anlaşma hareketi: şirketin yaptığı ödeme, ekstra gelir ya da ekstra gider. */
 class AgreementEntry extends Model
 {
     use HasFactory;
 
     public const KINDS = [
-        'payment' => 'Ödeme alındı',
+        'payment' => 'Ödeme',
         'income' => 'Ekstra gelir',
         'expense' => 'Ekstra gider',
     ];

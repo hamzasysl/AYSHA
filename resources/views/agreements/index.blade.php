@@ -28,7 +28,7 @@
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-stat-card label="Sürekli Anlaşma" :value="$stats['recurring'].' şirket'" icon="fa-repeat" color="brand" :hint="$stats['one_time'].' tek seferlik'" />
         <x-stat-card label="Aylık Bedel (KDV hariç)" :value="number_format($stats['monthly_net'], 2, ',', '.').' ₺'" icon="fa-file-invoice-dollar" color="sky" :hint="'KDV dahil '.number_format($stats['monthly_gross'], 2, ',', '.').' ₺'" />
-        <x-stat-card :label="$label.' Alınan Ödeme'" :value="number_format($stats['paid'], 2, ',', '.').' ₺'" icon="fa-hand-holding-dollar" color="emerald" :hint="'Ekstra gelir '.number_format($stats['income'], 2, ',', '.').' ₺'" />
+        <x-stat-card :label="$label.' Ödemesi'" :value="number_format($stats['paid'], 2, ',', '.').' ₺'" icon="fa-hand-holding-dollar" color="emerald" :hint="'Ekstra gelir '.number_format($stats['income'], 2, ',', '.').' ₺'" />
         <x-stat-card :label="$label.' Ekstra Gider'" :value="number_format($stats['expense'], 2, ',', '.').' ₺'" icon="fa-arrow-trend-down" color="amber" :hint="'Net '.number_format($stats['paid'] + $stats['income'] - $stats['expense'], 2, ',', '.').' ₺'" />
     </div>
 
@@ -52,7 +52,7 @@
                 <thead><tr>
                     <th class="th">Şirket</th><th class="th">Tür</th><th class="th text-right">Alan</th><th class="th text-right">m² Fiyatı</th>
                     <th class="th text-right">KDV Hariç</th><th class="th text-right">KDV Dahil</th>
-                    <th class="th text-right" title="{{ $label }} içinde alınan ödeme">Ödeme</th><th class="th" title="{{ $label }} içindeki ekstra gelir / gider">Ekstra</th><th class="th text-right">İşlem</th>
+                    <th class="th text-right" title="{{ $label }} içinde yapılan ödeme">Ödeme</th><th class="th" title="{{ $label }} içindeki ekstra gelir / gider">Ekstra</th><th class="th text-right">İşlem</th>
                 </tr></thead>
                 <tbody class="divide-y divide-slate-100">
                 @forelse ($agreements as $a)

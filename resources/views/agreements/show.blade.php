@@ -33,7 +33,7 @@
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-stat-card label="Alan" :value="$agreement->m2 > 0 ? number_format($agreement->m2, 0, ',', '.').' m²' : '—'" icon="fa-ruler-combined" color="violet" :hint="$agreement->m2_rate > 0 ? $f($agreement->m2_rate).' ₺ / m²' : 'm² fiyatı girilmedi'" />
         <x-stat-card :label="$agreement->type === 'recurring' ? 'Aylık Bedel' : 'Anlaşma Bedeli'" :value="number_format($agreement->gross_total, 2, ',', '.').' ₺'" icon="fa-file-invoice" color="brand" :hint="'KDV hariç '.number_format($agreement->net_total, 2, ',', '.').' ₺ · %'.$f($agreement->vat_rate).' KDV'" />
-        <x-stat-card label="Toplam Alınan Ödeme" :value="number_format($agreement->paid(), 2, ',', '.').' ₺'" icon="fa-hand-holding-dollar" color="emerald" :hint="'Ekstra gelir '.number_format($agreement->extraIncome(), 2, ',', '.').' ₺'" />
+        <x-stat-card label="Toplam Ödeme" :value="number_format($agreement->paid(), 2, ',', '.').' ₺'" icon="fa-hand-holding-dollar" color="emerald" :hint="'Ekstra gelir '.number_format($agreement->extraIncome(), 2, ',', '.').' ₺'" />
         <x-stat-card label="Toplam Ekstra Gider" :value="number_format($agreement->extraExpense(), 2, ',', '.').' ₺'" icon="fa-arrow-trend-down" color="amber" :hint="'Net '.number_format($agreement->balance(), 2, ',', '.').' ₺'" />
     </div>
 
