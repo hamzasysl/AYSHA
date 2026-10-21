@@ -67,8 +67,7 @@
 
     <div><label class="form-label">Yetkili</label><input name="contact_name" value="{{ old('contact_name', $a?->contact_name) }}" class="form-input"></div>
     <div><label class="form-label">Telefon</label><input name="phone" value="{{ old('phone', $a?->phone) }}" placeholder="0532 000 0000" class="form-input"></div>
-    <div><label class="form-label">E-posta</label><input name="email" value="{{ old('email', $a?->email) }}" class="form-input"></div>
-    <div><label class="form-label">Ödeme günü <span class="font-normal text-slate-400">ayın kaçında</span></label><input name="payment_day" value="{{ old('payment_day', $a?->payment_day) }}" inputmode="numeric" placeholder="Örn. 5" class="form-input text-right"></div>
+    <div class="col-span-2"><label class="form-label">E-posta</label><input name="email" value="{{ old('email', $a?->email) }}" class="form-input"></div>
     <div><label class="form-label">Başlangıç</label><x-date-input name="start_date" :value="old('start_date', $a?->start_date)" /></div>
     <div><label class="form-label">Bitiş</label><x-date-input name="end_date" :value="old('end_date', $a?->end_date)" /></div>
     <div class="col-span-2"><label class="form-label">Konum <span class="font-normal text-slate-400">— bina, kat, kapı no</span></label><input name="address" value="{{ old('address', $a?->address) }}" placeholder="Örn. 1. blok, 3. kat, no 129" class="form-input"></div>

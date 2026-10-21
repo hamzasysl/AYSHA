@@ -19,7 +19,7 @@ class Agreement extends Model
 
     protected $fillable = [
         'name', 'type', 'status', 'contact_name', 'phone', 'email', 'address',
-        'm2', 'm2_rate', 'amount', 'vat_rate', 'start_date', 'end_date', 'payment_day', 'note',
+        'm2', 'm2_rate', 'amount', 'vat_rate', 'start_date', 'end_date', 'note',
     ];
 
     protected function casts(): array

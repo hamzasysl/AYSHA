@@ -49,7 +49,6 @@
                     ['Konum', $agreement->address],
                     ['Başlangıç', $agreement->start_date?->format('d.m.Y')],
                     ['Bitiş', $agreement->end_date?->format('d.m.Y')],
-                    ['Ödeme günü', $agreement->payment_day ? 'Ayın '.$agreement->payment_day.'. günü' : null],
                     ['Açıklama', $agreement->note],
                 ] as [$k, $v])
                     <div class="flex justify-between gap-3 py-2"><dt class="text-slate-500">{{ $k }}</dt><dd class="text-right font-medium text-slate-800">{{ $v ?: '—' }}</dd></div>

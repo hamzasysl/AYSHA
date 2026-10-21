@@ -25,7 +25,6 @@ class AgreementRequest extends FormRequest
             'm2_rate' => $num($this->m2_rate),
             'amount' => $num($this->amount) ?? 0,
             'vat_rate' => $num($this->vat_rate) ?? Setting::amount('vat_rate'),
-            'payment_day' => $this->payment_day ?: null,
         ]);
     }
 
@@ -45,7 +44,6 @@ class AgreementRequest extends FormRequest
             'vat_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'payment_day' => ['nullable', 'integer', 'between:1,31'],
             'note' => ['nullable', 'string', 'max:255'],
         ];
     }
@@ -56,7 +54,7 @@ class AgreementRequest extends FormRequest
             'name' => 'şirket adı', 'type' => 'tür', 'status' => 'durum', 'contact_name' => 'yetkili',
             'phone' => 'telefon', 'email' => 'e-posta', 'address' => 'konum', 'm2' => 'alan',
             'm2_rate' => 'm² fiyatı', 'amount' => 'tutar', 'vat_rate' => 'KDV oranı',
-            'start_date' => 'başlangıç', 'end_date' => 'bitiş', 'payment_day' => 'ödeme günü', 'note' => 'açıklama',
+            'start_date' => 'başlangıç', 'end_date' => 'bitiş', 'note' => 'açıklama',
         ];
     }
 }
