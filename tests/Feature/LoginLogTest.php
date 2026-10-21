@@ -63,4 +63,28 @@ class LoginLogTest extends TestCase
             ->assertSee('Oturum geçmişi')
             ->assertSee('Başarılı');
     }
+
+    public function test_settings_lists_every_users_logins_in_one_place(): void
+    {
+        $admin = \App\Models\User::factory()->create(['role' => 'admin', 'name' => 'Ayşenur Miran', 'username' => 'ayse', 'email' => 'ayse@ttb.test']);
+        $other = \App\Models\User::factory()->create(['role' => 'editor', 'name' => 'Batuhan Şençağ', 'username' => 'batuhan', 'email' => 'batuhan@ttb.test']);
+
+        // Başka bir bilgisayardan başka bir kullanıcının girişi
+        $this->withServerVariables(['REMOTE_ADDR' => '88.241.10.5'])
+            ->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0'])
+            ->post('/giris', ['login' => 'batuhan', 'password' => 'password'])->assertRedirect();
+        $this->post('/cikis');
+
+        // Hatalı deneme
+        $this->post('/giris', ['login' => 'batuhan', 'password' => 'yanlis'])->assertSessionHasErrors('login');
+
+        $r = $this->actingAs($admin)->get('/ayarlar?tab=logins')->assertOk();
+        $r->assertSee('Oturum Geçmişi')
+            ->assertSee('Batuhan Şençağ')      // başkasının girişi de görünür
+            ->assertSee('88.241.10.5')
+            ->assertSee('Hatalı şifre');
+
+        $this->assertSame(2, \App\Models\LoginLog::count());
+        $this->assertSame($other->id, \App\Models\LoginLog::where('successful', true)->first()->user_id);
+    }
 }

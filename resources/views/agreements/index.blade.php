@@ -76,7 +76,6 @@
                         <td class="td text-right whitespace-nowrap">
                             <div class="inline-flex items-center gap-1.5">
                                 @can('edit')<button type="button" @click="edit = true" class="btn-icon" title="Düzenle"><i class="fa-solid fa-pen"></i></button>@endcan
-                                @can('delete')<x-confirm-form :action="route('agreements.destroy', $a)" title="Anlaşmayı sil" :message="$a->name.' anlaşması, kayıtları ve notları silinecek.'" button="Evet, sil"><i class="fa-solid fa-trash"></i></x-confirm-form>@endcan
                                 <a href="{{ route('agreements.show', $a) }}" class="btn-icon" title="Kayıtlar ve notlar"><i class="fa-solid fa-arrow-right"></i></a>
                             </div>
 

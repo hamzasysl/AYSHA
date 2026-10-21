@@ -37,9 +37,14 @@ class SettingController extends Controller
             'leave_type' => \App\Models\Leave::selectRaw('type as k, COUNT(*) as c')->groupBy('type')->pluck('c', 'k'),
         ];
 
+        // Tüm kullanıcıların giriş kayıtları (kim, ne zaman, nereden)
+        $loginLogs = Schema::hasTable('login_logs')
+            ? \App\Models\LoginLog::with('user')->latest('created_at')->latest('id')->limit(100)->get()
+            : collect();
+
         $pendingMigrations = SystemController::status()['pending'];
 
-        return view('settings.edit', compact('values', 'users', 'categories', 'categoryUsage', 'lists', 'listUsage', 'pendingMigrations'));
+        return view('settings.edit', compact('values', 'users', 'categories', 'categoryUsage', 'lists', 'listUsage', 'pendingMigrations', 'loginLogs'));
     }
 
     /** Ayarlar > m² Fiyatları (m² Hesaplayıcı'nın standart tutarları). */

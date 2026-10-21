@@ -4,7 +4,7 @@
         {{-- Sol menü --}}
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <nav class="card p-2">
-                @php $tabs = ['allowances' => ['fa-utensils', 'Yemek & Yol Ücretleri', 'Aylık standart tutarlar'], 'pricing' => ['fa-ruler-combined', 'Fiyatlar & KDV', 'm² fiyatı ve KDV oranı'], 'company' => ['fa-building-columns', 'Şirket & Banka', 'Garanti maaş dosyası bilgileri'], 'account' => ['fa-user-shield', 'Hesap', 'Ad, kullanıcı adı, şifre'], 'users' => ['fa-users-gear', 'Kullanıcılar', 'Sisteme giriş yapabilenler'], 'categories' => ['fa-tags', 'Gider Kategorileri', 'Muhasebedeki kategoriler'], 'lists' => ['fa-list-check', 'Listeler', 'Görevler, bankalar, izin türleri'], 'system' => ['fa-server', 'Sistem', 'Güncelleme ve önbellek']]; if (! $manager) { $tabs = ['account' => $tabs['account']]; } @endphp
+                @php $tabs = ['allowances' => ['fa-utensils', 'Yemek & Yol Ücretleri', 'Aylık standart tutarlar'], 'pricing' => ['fa-ruler-combined', 'Fiyatlar & KDV', 'm² fiyatı ve KDV oranı'], 'company' => ['fa-building-columns', 'Şirket & Banka', 'Garanti maaş dosyası bilgileri'], 'account' => ['fa-user-shield', 'Hesap', 'Ad, kullanıcı adı, şifre'], 'users' => ['fa-users-gear', 'Kullanıcılar', 'Sisteme giriş yapabilenler'], 'categories' => ['fa-tags', 'Gider Kategorileri', 'Muhasebedeki kategoriler'], 'lists' => ['fa-list-check', 'Listeler', 'Görevler, bankalar, izin türleri'], 'logins' => ['fa-clock-rotate-left', 'Oturum Geçmişi', 'Kim nereden girmiş'], 'system' => ['fa-server', 'Sistem', 'Güncelleme ve önbellek']]; if (! $manager) { $tabs = ['account' => $tabs['account']]; } @endphp
                 @foreach ($tabs as $key => [$icon, $label, $desc])
                     <button type="button" @click="tab = '{{ $key }}'" :class="tab === '{{ $key }}' ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-50'" class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition">
                         <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white"><i class="fa-solid {{ $icon }} text-sm" :class="tab === '{{ $key }}' ? 'text-brand-600' : 'text-slate-400'"></i></span>
@@ -413,6 +413,44 @@
                     </div>
                 </div>
                 @endforeach
+            </div>
+
+            {{-- Oturum geçmişi: bütün kullanıcıların girişleri --}}
+            <div x-show="tab === 'logins'" x-cloak class="card overflow-hidden">
+                <div class="flex items-start gap-4 border-b border-slate-100 px-6 py-5">
+                    <div class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                    <div class="flex-1">
+                        <h2 class="text-base font-semibold text-slate-900">Oturum Geçmişi</h2>
+                        <p class="mt-0.5 text-sm text-slate-500">Bütün kullanıcıların girişleri: kim, ne zaman, hangi IP ve cihazdan. Hatalı şifre denemeleri de listelenir. Son 100 kayıt.</p>
+                    </div>
+                    @if ($loginLogs->isNotEmpty())
+                        <div class="shrink-0 text-right text-xs text-slate-500">
+                            <div><b class="text-slate-800">{{ $loginLogs->where('successful', true)->count() }}</b> başarılı</div>
+                            <div><b class="text-red-600">{{ $loginLogs->where('successful', false)->count() }}</b> hatalı</div>
+                        </div>
+                    @endif
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-hover">
+                        <thead><tr><th class="th">Kullanıcı</th><th class="th">Tarih / saat</th><th class="th">IP</th><th class="th">Cihaz</th><th class="th">Durum</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100">
+                        @forelse ($loginLogs as $log)
+                            <tr>
+                                <td class="td whitespace-nowrap">
+                                    <span class="font-medium text-slate-900">{{ $log->user?->name ?? '—' }}</span>
+                                    <div class="font-mono text-[11px] text-slate-400">{{ $log->login }}</div>
+                                </td>
+                                <td class="td whitespace-nowrap text-slate-600">{{ $log->created_at->format('d.m.Y H:i') }}<div class="text-[11px] text-slate-400">{{ $log->created_at->diffForHumans() }}</div></td>
+                                <td class="td whitespace-nowrap font-mono text-xs text-slate-600">{{ $log->ip ?: '—' }}</td>
+                                <td class="td whitespace-nowrap text-xs text-slate-600"><i class="fa-solid {{ $log->device_icon }} mr-1.5 text-slate-400"></i>{{ $log->device_label }}</td>
+                                <td class="td whitespace-nowrap"><span class="{{ $log->successful ? 'badge-ok' : 'badge-danger' }}">{{ $log->successful ? 'Başarılı' : 'Hatalı şifre' }}</span></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="px-5 py-10 text-center text-sm text-slate-500">Henüz giriş kaydı yok. Kayıtlar bu özellik yüklendikten sonraki girişlerden itibaren tutulur.</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {{-- Sistem: güncelleme ve önbellek --}}
