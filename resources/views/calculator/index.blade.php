@@ -92,7 +92,7 @@
             <h2 class="mb-1 font-semibold text-slate-900"><i class="fa-solid fa-percent"></i>KDV Hesaplama</h2>
             <p class="mb-4 text-xs text-slate-500">Fiyat alanlarından hangisini yazarsanız diğerleri hesaplanır. İndirim, KDV'den önce fiyattan düşülür.</p>
 
-            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                 <div>
                     <label class="form-label" for="kdv_net">Birim fiyat <span class="font-normal text-slate-400">KDV hariç</span></label>
                     <div class="relative"><input id="kdv_net" x-model="net" @input="calc('net')" inputmode="decimal" placeholder="0,00" class="form-input pr-8 text-right font-medium tabular-nums"><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">₺</span></div>
@@ -109,15 +109,10 @@
                     <label class="form-label" for="kdv_discount">İndirim</label>
                     <div class="relative"><input id="kdv_discount" x-model="discount" @input="calc('net')" inputmode="decimal" placeholder="0" class="form-input pr-8 text-right font-medium tabular-nums"><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">%</span></div>
                 </div>
-            </div>
-
-            <div class="mt-4 rounded-xl border border-brand-200 bg-brand-50/60 p-4">
-                <label class="form-label" for="kdv_total">Ödenecek tutar <span class="font-normal text-slate-500">— indirim düşülmüş, KDV dahil</span></label>
-                <div class="relative max-w-sm">
-                    <input id="kdv_total" x-model="total" @input="calc('total')" inputmode="decimal" placeholder="0,00" class="form-input h-12 pr-10 text-right text-lg font-bold tabular-nums">
-                    <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">₺</span>
+                <div>
+                    <label class="form-label" for="kdv_total">Ödenecek tutar <span class="font-normal text-slate-400">KDV dahil</span></label>
+                    <div class="relative"><input id="kdv_total" x-model="total" @input="calc('total')" inputmode="decimal" placeholder="0,00" class="form-input pr-8 text-right font-bold tabular-nums"><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">₺</span></div>
                 </div>
-                <p class="mt-2 text-xs text-slate-500">Buraya da yazabilirsiniz; birim fiyatlar geriye doğru hesaplanır.</p>
             </div>
 
             <div class="mt-5 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-4">
