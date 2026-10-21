@@ -96,4 +96,33 @@ class AgreementTest extends TestCase
         $this->actingAs($viewer)->post("/anlasmalar/{$a->id}/kayit", ['entry_date' => '2026-10-05', 'kind' => 'payment', 'amount' => '1'])->assertForbidden();
         $this->actingAs($viewer)->delete("/anlasmalar/{$a->id}")->assertForbidden();
     }
+
+    public function test_manual_amount_overrides_m2_calculation(): void
+    {
+        $u = $this->user;
+
+        // m² × fiyat 45.000 ederdi; elle 40.000 girilince o kalır
+        $this->actingAs($u)->post('/anlasmalar', [
+            'name' => 'Pazarlıklı Şirket', 'type' => 'recurring', 'status' => 'active',
+            'm2' => '450', 'm2_rate' => '100', 'amount' => '40.000,00', 'vat_rate' => '20',
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        $a = Agreement::where('name', 'Pazarlıklı Şirket')->first();
+        $this->assertSame('40000.00', (string) $a->amount);
+        $this->assertSame(48000.0, $a->gross_total);
+
+        // Düzenlemede de elle girilen tutar korunur
+        $this->actingAs($u)->patch("/anlasmalar/{$a->id}", [
+            'name' => 'Pazarlıklı Şirket', 'type' => 'recurring', 'status' => 'active',
+            'm2' => '450', 'm2_rate' => '100', 'amount' => '38.500,00', 'vat_rate' => '20',
+        ])->assertRedirect();
+        $this->assertSame('38500.00', (string) $a->fresh()->amount);
+
+        // Tutar boş bırakılırsa m²'den hesaplanır
+        $this->actingAs($u)->patch("/anlasmalar/{$a->id}", [
+            'name' => 'Pazarlıklı Şirket', 'type' => 'recurring', 'status' => 'active',
+            'm2' => '450', 'm2_rate' => '100', 'amount' => '', 'vat_rate' => '20',
+        ])->assertRedirect();
+        $this->assertSame('45000.00', (string) $a->fresh()->amount);
+    }
 }

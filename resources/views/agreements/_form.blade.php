@@ -8,13 +8,16 @@
         m2: '{{ $f($a?->m2) }}',
         rate: '{{ $f($a?->m2_rate ?? $d['m2_rate']) }}',
         rateTouched: {{ $a && $a->m2_rate !== null ? 'true' : 'false' }},
+        amountTouched: false,
+        money(v) { return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0); },
+        syncAmount() { if (! this.amountTouched && this.auto) this.amount = this.money(parseMoney(this.m2) * parseMoney(this.rate)); },
         get autoRate() { return parseMoney(this.m2) > {{ $r['large_limit'] }} ? {{ $r['large_rate'] }} : {{ $r['rate'] }}; },
         get large() { return parseMoney(this.m2) > {{ $r['large_limit'] }}; },
         syncRate() { if (! this.rateTouched) this.rate = String(this.autoRate).replace('.', ','); },
         amount: '{{ $f($a?->amount) }}',
         vat: '{{ $f($a?->vat_rate ?? $d['vat_rate']) }}',
         get auto() { return parseMoney(this.m2) > 0 && parseMoney(this.rate) > 0; },
-        get net() { return this.auto ? Math.round(parseMoney(this.m2) * parseMoney(this.rate) * 100) / 100 : parseMoney(this.amount); },
+        get net() { return parseMoney(this.amount); },
         get gross() { return Math.round(this.net * (1 + parseMoney(this.vat) / 100) * 100) / 100; },
      }" class="grid grid-cols-2 gap-3">
 
@@ -25,19 +28,22 @@
     <div><label class="form-label">Durum *</label>
         <x-ui-select name="status" :search="false">@foreach (\App\Models\Agreement::STATUSES as $k => $l)<option value="{{ $k }}" @selected(old('status', $a?->status ?? 'active') === $k)>{{ $l }}</option>@endforeach</x-ui-select></div>
 
-    <div><label class="form-label">Alan (m²)</label><input name="m2" x-model="m2" @input="syncRate()" inputmode="decimal" placeholder="Örn. 450" class="form-input text-right"></div>
+    <div><label class="form-label">Alan (m²)</label><input name="m2" x-model="m2" @input="syncRate(); syncAmount()" inputmode="decimal" placeholder="Örn. 450" class="form-input text-right"></div>
     <div><label class="form-label">m² fiyatı (KDV hariç)</label>
-        <input name="m2_rate" x-model="rate" @input="rateTouched = true" inputmode="decimal" class="form-input text-right">
+        <input name="m2_rate" x-model="rate" @input="rateTouched = true; syncAmount()" inputmode="decimal" class="form-input text-right">
         <p class="mt-1 flex items-center gap-2 text-[11px]">
             <span x-show="! rateTouched && large" x-cloak class="text-brand-600">{{ $f($r['large_limit']) }} m² üstü fiyatı uygulandı</span>
             <span x-show="! rateTouched && ! large" x-cloak class="text-slate-400">Ayarlardaki standart fiyat</span>
-            <button type="button" x-show="rateTouched" x-cloak @click="rateTouched = false; syncRate()" class="font-medium text-brand-600 hover:underline"><i class="fa-solid fa-rotate-left"></i> Kurala göre</button>
+            <button type="button" x-show="rateTouched" x-cloak @click="rateTouched = false; syncRate(); syncAmount()" class="font-medium text-brand-600 hover:underline"><i class="fa-solid fa-rotate-left"></i> Kurala göre</button>
         </p>
     </div>
 
     <div><label class="form-label">Tutar (KDV hariç) *</label>
-        <input name="amount" x-model="amount" :readonly="auto" :value="auto ? net.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : amount" inputmode="decimal" required class="form-input text-right" :class="auto ? 'bg-slate-50 text-slate-500' : ''">
-        <p class="mt-1 text-[11px] text-slate-400" x-show="auto" x-cloak>m² × m² fiyatından hesaplanıyor</p>
+        <input name="amount" x-model="amount" @input="amountTouched = true" inputmode="decimal" required class="form-input text-right">
+        <p class="mt-1 text-[11px]">
+            <span x-show="! amountTouched && auto" x-cloak class="text-slate-400">m² × m² fiyatından hesaplandı, elle değiştirebilirsiniz</span>
+            <button type="button" x-show="amountTouched && auto" x-cloak @click="amountTouched = false; syncAmount()" class="font-medium text-brand-600 hover:underline"><i class="fa-solid fa-rotate-left"></i> m²'den hesapla</button>
+        </p>
     </div>
     <div><label class="form-label">KDV oranı (%)</label><input name="vat_rate" x-model="vat" inputmode="decimal" class="form-input text-right"></div>
 

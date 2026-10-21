@@ -33,8 +33,9 @@ class Agreement extends Model
     protected static function booted(): void
     {
         static::saving(function (Agreement $a) {
-            // m² ve m² fiyatı girilmişse ana tutar oradan hesaplanır
-            if ($a->m2 > 0 && $a->m2_rate > 0) {
+            // Tutar boş bırakıldıysa m² × m² fiyatından doldurulur; girilen tutar ezilmez
+            // (kullanıcı otomatik hesabı elle değiştirebilmeli).
+            if ((float) $a->amount <= 0 && $a->m2 > 0 && $a->m2_rate > 0) {
                 $a->amount = round((float) $a->m2 * (float) $a->m2_rate, 2);
             }
         });
