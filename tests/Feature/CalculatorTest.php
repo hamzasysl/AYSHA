@@ -26,17 +26,17 @@ class CalculatorTest extends TestCase
     {
         foreach (['admin', 'viewer'] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role]))
-                ->get('/m2-hesaplayici')->assertOk()->assertSee('m² Hesaplayıcı')->assertSee('100 m² üstü');
+                ->get('/hesaplayici')->assertOk()->assertSee('m² Hesaplama')->assertSee('KDV Hesaplama')->assertSee('100 m² üstü');
         }
     }
 
     public function test_prices_can_be_changed_from_settings(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $this->actingAs($admin)->get('/ayarlar?tab=pricing')->assertOk()->assertSee('m² Fiyatları');
+        $this->actingAs($admin)->get('/ayarlar?tab=pricing')->assertOk()->assertSee('Fiyatlar &amp; KDV', false);
 
         $this->actingAs($admin)->put('/ayarlar/m2-fiyatlari', [
-            'm2_rate' => '120', 'm2_large_rate' => '90', 'm2_large_limit' => '150', 'm2_small_limit' => '40',
+            'm2_rate' => '120', 'm2_large_rate' => '90', 'm2_large_limit' => '150', 'm2_small_limit' => '40', 'vat_rate' => '10',
         ])->assertRedirect('/ayarlar?tab=pricing')->assertSessionHas('success');
 
         $this->assertSame(18000.0, M2Pricing::calculate(150)['total']);   // 150 × 120
@@ -44,12 +44,13 @@ class CalculatorTest extends TestCase
         $this->assertTrue(M2Pricing::calculate(39)['small']);
         $this->assertFalse(M2Pricing::calculate(45)['small']);
 
-        $this->actingAs($admin)->get('/m2-hesaplayici')->assertOk()
+        $this->assertSame(10.0, \App\Models\Setting::amount('vat_rate'));
+        $this->actingAs($admin)->get('/hesaplayici')->assertOk()
             ->assertSee('150 m² üstü')->assertSee('18.000,00 ₺')->assertSee('Fiyatları düzenle');
 
         // küçük sınır büyük sınırdan büyük olamaz
         $this->actingAs($admin)->put('/ayarlar/m2-fiyatlari', [
-            'm2_rate' => '120', 'm2_large_rate' => '90', 'm2_large_limit' => '100', 'm2_small_limit' => '200',
+            'm2_rate' => '120', 'm2_large_rate' => '90', 'm2_large_limit' => '100', 'm2_small_limit' => '200', 'vat_rate' => '20',
         ])->assertSessionHasErrors('m2_small_limit');
     }
 
@@ -57,8 +58,8 @@ class CalculatorTest extends TestCase
     {
         $editor = User::factory()->create(['role' => 'editor']);
         $this->actingAs($editor)->put('/ayarlar/m2-fiyatlari', [
-            'm2_rate' => '1', 'm2_large_rate' => '1', 'm2_large_limit' => '100', 'm2_small_limit' => '50',
+            'm2_rate' => '1', 'm2_large_rate' => '1', 'm2_large_limit' => '100', 'm2_small_limit' => '50', 'vat_rate' => '20',
         ])->assertForbidden();
-        $this->actingAs($editor)->get('/m2-hesaplayici')->assertOk()->assertDontSee('Fiyatları düzenle');
+        $this->actingAs($editor)->get('/hesaplayici')->assertOk()->assertDontSee('Fiyatları düzenle');
     }
 }

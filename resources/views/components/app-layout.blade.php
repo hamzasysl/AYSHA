@@ -6,8 +6,9 @@
         ['route' => 'expenses.index', 'match' => 'expenses.*|payments.*', 'icon' => 'fa-calculator', 'label' => 'Muhasebe', 'desc' => 'Maaş, yemek, yol, gider', 'tone' => 'text-emerald-600 bg-emerald-50'],
         ['route' => 'leaves.index', 'match' => 'leaves.*', 'icon' => 'fa-calendar-days', 'label' => 'İzinler', 'desc' => 'İzin, rapor, devamsızlık', 'tone' => 'text-amber-600 bg-amber-50'],
         ['route' => 'reviews.index', 'match' => 'reviews.*', 'icon' => 'fa-star', 'label' => 'Performans', 'desc' => 'Aylık değerlendirme', 'tone' => 'text-orange-500 bg-orange-50'],
+        ['route' => 'agreements.index', 'match' => 'agreements.*', 'icon' => 'fa-file-signature', 'label' => 'Anlaşmalar', 'desc' => 'Hizmet verilen kurumlar', 'tone' => 'text-teal-600 bg-teal-50'],
         ['route' => 'reports.index', 'match' => 'reports.*', 'icon' => 'fa-chart-column', 'label' => 'Raporlar', 'desc' => 'Aylık ve yıllık özet', 'tone' => 'text-sky-600 bg-sky-50'],
-        ['route' => 'calculator', 'match' => 'calculator', 'icon' => 'fa-ruler-combined', 'label' => 'm² Hesaplayıcı', 'desc' => 'Ofis temizlik fiyatı', 'tone' => 'text-rose-600 bg-rose-50'],
+        ['route' => 'calculator', 'match' => 'calculator', 'icon' => 'fa-ruler-combined', 'label' => 'Hesaplayıcı', 'desc' => 'm² ve KDV', 'tone' => 'text-rose-600 bg-rose-50'],
         ['route' => 'settings.edit', 'match' => 'settings.*|users.*', 'icon' => 'fa-sliders', 'label' => 'Ayarlar', 'desc' => 'Hesap, ücretler, kullanıcılar', 'tone' => 'text-slate-600 bg-slate-100'],
     ];
     $current = collect($nav)->first(fn ($i) => request()->routeIs(...explode('|', $i['match'])));

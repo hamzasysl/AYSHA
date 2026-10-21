@@ -22,6 +22,7 @@ class Setting extends Model
         'm2_large_rate' => ['m² başı fiyat (büyük alan)', 80, 'pricing'],
         'm2_large_limit' => ['Büyük alan sınırı (m² üstü)', 100, 'pricing'],
         'm2_small_limit' => ['Küçük alan sınırı (m² altı)', 50, 'pricing'],
+        'vat_rate' => ['KDV oranı (%)', 20, 'pricing'],
         'company_name' => ['Şirket adı', 'TTB Turizm', 'company'],
         'bank_corp_code' => ['Banka kurum kodu (Garanti)', '', 'bank'],
         'bank_branch_code' => ['Banka şube kodu', '', 'bank'],

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\AgreementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseCategoryController;
@@ -37,8 +38,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('performans', PerformanceReviewController::class)->names('reviews')->parameters(['performans' => 'review'])->only(['index']);
     Route::resource('izinler', LeaveController::class)->names('leaves')->parameters(['izinler' => 'leave'])->only(['index']);
     Route::get('/izinler/{leave}/yazdir', [LeaveController::class, 'print'])->name('leaves.print');
+    Route::get('/anlasmalar', [AgreementController::class, 'index'])->name('agreements.index');
+    Route::get('/anlasmalar/{agreement}', [AgreementController::class, 'show'])->name('agreements.show')->whereNumber('agreement');
     Route::get('/raporlar', [ReportController::class, 'index'])->name('reports.index');
-    Route::view('/m2-hesaplayici', 'calculator.index')->name('calculator');
+    Route::view('/hesaplayici', 'calculator.index')->name('calculator');
+    Route::redirect('/m2-hesaplayici', '/hesaplayici');
     Route::get('/ayarlar', [SettingController::class, 'edit'])->name('settings.edit');
     Route::put('/ayarlar/hesap', [SettingController::class, 'account'])->name('settings.account');
 
@@ -46,7 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:edit')->group(function () {
         Route::resource('personel', EmployeeController::class)->names('employees')->parameters(['personel' => 'employee'])->only(['create', 'store', 'edit', 'update']);
 
-        Route::post('/notlar/{type}/{id}', [NoteController::class, 'store'])->name('notes.store')->whereIn('type', ['employees', 'expenses', 'leaves'])->whereNumber('id');
+        Route::post('/notlar/{type}/{id}', [NoteController::class, 'store'])->name('notes.store')->whereIn('type', ['employees', 'expenses', 'leaves', 'agreements'])->whereNumber('id');
         Route::patch('/notlar/{note}', [NoteController::class, 'update'])->name('notes.update');
 
         Route::post('/maas/olustur', [SalaryPaymentController::class, 'generate'])->name('payments.generate');
@@ -68,6 +72,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/muhasebe/{expense}/durum', [ExpenseController::class, 'setStatus'])->name('expenses.status');
         Route::post('/muhasebe/{expense}/iade', [ExpenseController::class, 'refundReceived'])->name('expenses.refund');
 
+        Route::post('/anlasmalar', [AgreementController::class, 'store'])->name('agreements.store');
+        Route::post('/anlasmalar/tahsilat-olustur', [AgreementController::class, 'generatePayments'])->name('agreements.generate-payments');
+        Route::patch('/anlasmalar/{agreement}', [AgreementController::class, 'update'])->name('agreements.update');
+        Route::post('/anlasmalar/{agreement}/ekstra', [AgreementController::class, 'storeExtra'])->name('agreements.extras.store');
+        Route::patch('/anlasmalar/ekstra/{extra}', [AgreementController::class, 'updateExtra'])->name('agreements.extras.update');
+        Route::post('/anlasmalar/{agreement}/tahsilat', [AgreementController::class, 'storePayment'])->name('agreements.payments.store');
+        Route::patch('/anlasmalar/tahsilat/{payment}', [AgreementController::class, 'updatePayment'])->name('agreements.payments.update');
+        Route::post('/anlasmalar/tahsilat/{payment}/durum', [AgreementController::class, 'setPaymentStatus'])->name('agreements.payments.status');
+
         Route::resource('performans', PerformanceReviewController::class)->names('reviews')->parameters(['performans' => 'review'])->only(['create', 'store', 'edit', 'update']);
         Route::resource('izinler', LeaveController::class)->names('leaves')->parameters(['izinler' => 'leave'])->only(['create', 'store', 'edit', 'update']);
     });
@@ -80,6 +93,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/maas/{payment}', [SalaryPaymentController::class, 'destroy'])->name('payments.destroy');
         Route::post('/muhasebe/toplu-sil', [ExpenseController::class, 'bulkDestroy'])->name('expenses.bulk-destroy');
         Route::delete('/muhasebe/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+        Route::delete('/anlasmalar/ekstra/{extra}', [AgreementController::class, 'destroyExtra'])->name('agreements.extras.destroy');
+        Route::delete('/anlasmalar/tahsilat/{payment}', [AgreementController::class, 'destroyPayment'])->name('agreements.payments.destroy');
+        Route::delete('/anlasmalar/{agreement}', [AgreementController::class, 'destroy'])->name('agreements.destroy');
         Route::resource('performans', PerformanceReviewController::class)->names('reviews')->parameters(['performans' => 'review'])->only(['destroy']);
         Route::resource('izinler', LeaveController::class)->names('leaves')->parameters(['izinler' => 'leave'])->only(['destroy']);
     });

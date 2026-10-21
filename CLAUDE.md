@@ -65,15 +65,24 @@ php artisan test
 - Durum (Bekliyor/Ödendi) satırdaki kompakt açılır menüden değiştirilir (`x-ui-select` + `:submit`, `.status-select` sınıfı renkli nokta verir): `POST /expenses/{id}/status`, `POST /payments/{id}/status`. Ayrı "Ödendi" butonu yok.
 - Renk semantiği: birincil mavi #0284c7 (`brand-600`), onay/kaydet/ödendi YEŞİL (`.btn-success`, `.btn-icon-primary`), sil KIRMIZI (`.btn-danger`, `.btn-icon-danger`), düzenle koyu gri (`.btn-icon`).
 
-## m² Hesaplayıcı
-- `/m2-hesaplayici` (`calculator`, `Route::view`, tüm roller görür): ofis temizlik fiyatı. Tutarlar Ayarlar > **m² Fiyatları** sekmesinden (`settings.pricing`, `Setting` anahtarları `m2_rate` 100, `m2_large_rate` 80, `m2_large_limit` 100, `m2_small_limit` 50; migration gerekmez). Kural `App\Support\M2Pricing::rates()/calculate()`: sınıra kadar standart fiyat, sınır üstü büyük alan fiyatı (101 m² → 8.080 ₺; kullanıcı böyle istedi), küçük alan sınırı altı yine standart fiyat ama "küçük alan" rozeti. Sayfada "m² başı fiyat" elle doldurulursa kuralı ezer. Sayfadaki sınır/örnek metinleri ayarlardan üretilir; sabit sayı yazma.
+## Hesaplayıcı (m² + KDV)
+- `/hesaplayici` (`calculator`, `Route::view`, tüm roller; eski `/m2-hesaplayici` buraya yönlenir). İki kart: **m² Hesaplama** ve **KDV Hesaplama**.
+- m² kuralı `App\Support\M2Pricing::rates()/calculate()`, tutarlar Ayarlar > **Fiyatlar & KDV** sekmesinden (`settings.pricing`; `Setting` anahtarları `m2_rate` 100, `m2_large_rate` 80, `m2_large_limit` 100, `m2_small_limit` 50, `vat_rate` 20 — migration gerekmez). Sınır üstü büyük alan fiyatı (101 m² → 8.080 ₺; kullanıcı böyle istedi), küçük alan sınırı altı yine standart fiyat ama "küçük alan" rozeti. Sayfadaki sınır/örnek metinleri ayarlardan üretilir; sabit sayı yazma. "m² başı fiyat" elle doldurulursa kuralı ezer.
+- KDV kartı mezeSoft e-fatura satırı gibi: KDV oranı + miktar + üç fiyat alanı (birim KDV hariç / birim KDV dahil / toplam KDV dahil). Hangisi yazılırsa diğer ikisi hesaplanır (`calc(src)`, yazılan alana geri yazmaz). Altta matrah · KDV · genel toplam.
+
+## Anlaşmalar
+- `/anlasmalar` (`agreements.*`, `AgreementController`): temizlik hizmeti verilen kurumlar. `Agreement` (HasNotes; type recurring|one_time, status active|passive, m2, m2_rate, amount, vat_rate, yetkili/telefon/adres, başlangıç-bitiş, ödeme günü), `AgreementExtra` (kind charge=ekstra ücret / cost=ekstra gider, `recurring` her ay mı), `AgreementPayment` (dönem bazlı tahsilat, pending|paid, `METHODS` EFT/nakit/çek).
+- Tutar zinciri: m² ve m² fiyatı doluysa `amount` otomatik hesaplanır (`Agreement::saving`); `net_total` = amount + ekstra ücretler, `vat_amount`, `gross_total` (sürekli anlaşmada aylık fatura), `profit` = net − ekstra giderler. Sürekli anlaşmalarda sadece `recurring` ekstralar aylığa girer.
+- Tahsilat: detay sayfasından dönem bazlı eklenir (aynı dönem tekrar gönderilirse günceller), listede "Bu ay" kolonu. Üstteki "<Ay> Tahsilatları" düğmesi aktif sürekli anlaşmalara o ay için bekleyen kayıt açar (`agreements.generate-payments`, var olanı atlar).
+- Notlar `/notlar/agreements/{id}` ile çalışır (`NoteController::TYPES`). Anlaşma silinince ekstralar/tahsilatlar cascade, notlar `deleteNotes()` ile gider.
+- Anlaşmalar GELİR tarafıdır; muhasebe/raporlar gider tarafıdır, ikisi karışmaz.
 
 ## İzin & devamsızlık
 - `leaves` tablosu: type (annual, unpaid, marriage, birth, death, sick, absence), leave_year, start/end/return_date, days (iş günü, hafta sonu hariç otomatik ama elle değiştirilebilir), deduct_annual.
 - Yıllık hak `employees.annual_leave_days` (varsayılan 14, kişi bazında değişir). Bakiye `Employee::leaveBalance($year)` = hak − yıllık izinden düşülen günler. Hak yetmezse `leave_warning` ile geri döner; `force=1` ile "yine de ver".
 - `/leaves/{leave}/print` TTB Grup İzin Formu'nu doldurulmuş basar. Rota parametresi `leave` (`->parameters(['leaves' => 'leave'])`, yoksa Laravel `leaf` yapar!).
 
-- Ayarlar sayfası: sol sekmeli düzen (Yemek & Yol / Şirket & Banka / Hesap). Hesap sekmesi `PUT /ayarlar/hesap` (`settings.account`): ad, kullanıcı adı, e-posta, mevcut şifre ile şifre değişimi.
+- Ayarlar sayfası: sol sekmeli düzen (Yemek & Yol / Fiyatlar & KDV / Şirket & Banka / Hesap / Kullanıcılar / Gider Kategorileri / Listeler / Sistem). Hesap sekmesi `PUT /ayarlar/hesap` (`settings.account`): ad, kullanıcı adı, e-posta, mevcut şifre ile şifre değişimi.
 
 - Yönetilen listeler (`list_items`, Ayarlar > Listeler, `ListItemController`): type = position (görevler), bank (bankalar), leave_type (izin türleri; meta: deduct, icon). `Employee::positions()`, `ListItem::labels('bank')`, `Leave::types()` buradan okur; kodda sabit görev/banka/izin türü listesi KULLANMA. Görev/banka adı değişince personel kartları da güncellenir. Önbellek düz DİZİ tutar (Eloquent model cache'lenmez: dosya cache'inde `__PHP_Incomplete_Class` hatası verir).
 - Gider kategorileri VERİTABANINDA (`expense_categories`, Ayarlar > Gider Kategorileri, `ExpenseCategoryController`): slug, label, icon (FA), color, employee_based, is_system. `Expense::categories()` = `ExpenseCategory::map()` (önbellekli, kayıtta forget). Varsayılanlar migration'da: meal, travel, health (Sağlık Raporu), extra, cleaning, other. Kod içinde sabit kategori listesi KULLANMA; raporlar `employee_based` bayrağına göre Ekstra (meal/travel dışı personele bağlı) ve Genel (personelsiz) olarak gruplar. Yeni Kayıt modalında `employee_ids[]` çoklu seçim → her personele ayrı kayıt (`ExpenseController@store`, `array_merge` ile employee_id atanır). Raporlarda Ekstra ayrı kolon.

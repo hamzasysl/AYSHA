@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agreement;
 use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\Leave;
@@ -18,6 +19,7 @@ class NoteController extends Controller
         'employees' => Employee::class,
         'expenses' => Expense::class,
         'leaves' => Leave::class,
+        'agreements' => Agreement::class,
     ];
 
     public function store(Request $request, string $type, int $id): JsonResponse|RedirectResponse

@@ -4,7 +4,7 @@
         {{-- Sol menü --}}
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <nav class="card p-2">
-                @php $tabs = ['allowances' => ['fa-utensils', 'Yemek & Yol Ücretleri', 'Aylık standart tutarlar'], 'pricing' => ['fa-ruler-combined', 'm² Fiyatları', 'Ofis temizlik fiyatı'], 'company' => ['fa-building-columns', 'Şirket & Banka', 'Garanti maaş dosyası bilgileri'], 'account' => ['fa-user-shield', 'Hesap', 'Ad, kullanıcı adı, şifre'], 'users' => ['fa-users-gear', 'Kullanıcılar', 'Sisteme giriş yapabilenler'], 'categories' => ['fa-tags', 'Gider Kategorileri', 'Muhasebedeki kategoriler'], 'lists' => ['fa-list-check', 'Listeler', 'Görevler, bankalar, izin türleri'], 'system' => ['fa-server', 'Sistem', 'Güncelleme ve önbellek']]; if (! $manager) { $tabs = ['account' => $tabs['account']]; } @endphp
+                @php $tabs = ['allowances' => ['fa-utensils', 'Yemek & Yol Ücretleri', 'Aylık standart tutarlar'], 'pricing' => ['fa-ruler-combined', 'Fiyatlar & KDV', 'm² fiyatı ve KDV oranı'], 'company' => ['fa-building-columns', 'Şirket & Banka', 'Garanti maaş dosyası bilgileri'], 'account' => ['fa-user-shield', 'Hesap', 'Ad, kullanıcı adı, şifre'], 'users' => ['fa-users-gear', 'Kullanıcılar', 'Sisteme giriş yapabilenler'], 'categories' => ['fa-tags', 'Gider Kategorileri', 'Muhasebedeki kategoriler'], 'lists' => ['fa-list-check', 'Listeler', 'Görevler, bankalar, izin türleri'], 'system' => ['fa-server', 'Sistem', 'Güncelleme ve önbellek']]; if (! $manager) { $tabs = ['account' => $tabs['account']]; } @endphp
                 @foreach ($tabs as $key => [$icon, $label, $desc])
                     <button type="button" @click="tab = '{{ $key }}'" :class="tab === '{{ $key }}' ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-50'" class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition">
                         <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white"><i class="fa-solid {{ $icon }} text-sm" :class="tab === '{{ $key }}' ? 'text-brand-600' : 'text-slate-400'"></i></span>
@@ -72,8 +72,8 @@
                 <div class="flex items-start gap-4 border-b border-slate-100 px-6 py-5">
                     <div class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600"><i class="fa-solid fa-ruler-combined"></i></div>
                     <div>
-                        <h2 class="text-base font-semibold text-slate-900">m² Fiyatları</h2>
-                        <p class="mt-0.5 text-sm text-slate-500">m² Hesaplayıcı bu standart tutarlarla hesaplar. Hesaplayıcıda fiyat elle de girilebilir.</p>
+                        <h2 class="text-base font-semibold text-slate-900">Fiyatlar &amp; KDV</h2>
+                        <p class="mt-0.5 text-sm text-slate-500">Hesaplayıcı ve anlaşmalar bu standart tutarlarla çalışır. Her yerde elle de girilebilir.</p>
                     </div>
                 </div>
                 <div class="grid gap-5 px-6 py-5 sm:grid-cols-2">
@@ -81,10 +81,11 @@
                     <div><label class="form-label">Büyük alan fiyatı</label><div class="relative"><input name="m2_large_rate" value="{{ $m2('m2_large_rate') }}" required inputmode="decimal" class="form-input pr-14 text-right font-medium tabular-nums"><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">₺ / m²</span></div></div>
                     <div><label class="form-label">Büyük alan sınırı <span class="font-normal text-slate-400">— bu m²'nin üstü büyük alan</span></label><div class="relative"><input name="m2_large_limit" value="{{ $m2('m2_large_limit') }}" required inputmode="decimal" class="form-input pr-10 text-right font-medium tabular-nums"><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">m²</span></div></div>
                     <div><label class="form-label">Küçük alan sınırı <span class="font-normal text-slate-400">— bu m²'nin altı işaretlenir</span></label><div class="relative"><input name="m2_small_limit" value="{{ $m2('m2_small_limit') }}" required inputmode="decimal" class="form-input pr-10 text-right font-medium tabular-nums"><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">m²</span></div></div>
+                    <div class="sm:col-span-2 border-t border-slate-100 pt-5"><label class="form-label">KDV oranı <span class="font-normal text-slate-400">— KDV hesaplama ve anlaşmalarda varsayılan</span></label><div class="relative max-w-[200px]"><input name="vat_rate" value="{{ $m2('vat_rate') }}" required inputmode="decimal" class="form-input pr-10 text-right font-medium tabular-nums"><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">%</span></div></div>
                     <p class="sm:col-span-2 text-xs text-slate-500"><i class="fa-solid fa-circle-info mr-1 text-slate-400"></i>Küçük alanlar da standart fiyattan hesaplanır, hesaplayıcıda sadece "küçük alan" etiketi çıkar.</p>
                 </div>
                 <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-6 py-4">
-                    <a href="{{ route('calculator') }}" class="text-xs font-medium text-brand-600 hover:underline"><i class="fa-solid fa-arrow-up-right-from-square"></i> m² Hesaplayıcı'yı aç</a>
+                    <a href="{{ route('calculator') }}" class="text-xs font-medium text-brand-600 hover:underline"><i class="fa-solid fa-arrow-up-right-from-square"></i> Hesaplayıcı'yı aç</a>
                     <button class="btn-success"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
                 </div>
             </form>

@@ -47,14 +47,16 @@ class SettingController extends Controller
     {
         $num = fn ($v) => $v === null || trim((string) $v) === '' ? null : str_replace(['.', ','], ['', '.'], preg_replace('/[^\d,.]/', '', (string) $v));
 
-        $keys = ['m2_rate', 'm2_large_rate', 'm2_large_limit', 'm2_small_limit'];
+        $keys = ['m2_rate', 'm2_large_rate', 'm2_large_limit', 'm2_small_limit', 'vat_rate'];
         $request->merge(collect($keys)->mapWithKeys(fn ($k) => [$k => $num($request->input($k))])->all());
         $data = $request->validate([
             'm2_rate' => ['required', 'numeric', 'min:0'],
             'm2_large_rate' => ['required', 'numeric', 'min:0'],
             'm2_large_limit' => ['required', 'numeric', 'min:1'],
             'm2_small_limit' => ['required', 'numeric', 'min:0', 'lte:m2_large_limit'],
+            'vat_rate' => ['required', 'numeric', 'min:0', 'max:100'],
         ], [], [
+            'vat_rate' => 'KDV oranı',
             'm2_rate' => 'standart fiyat', 'm2_large_rate' => 'büyük alan fiyatı',
             'm2_large_limit' => 'büyük alan sınırı', 'm2_small_limit' => 'küçük alan sınırı',
         ]);
@@ -63,7 +65,7 @@ class SettingController extends Controller
             Setting::set($k, $data[$k]);
         }
 
-        return redirect()->route('settings.edit', ['tab' => 'pricing'])->with('success', 'm² fiyatları kaydedildi.');
+        return redirect()->route('settings.edit', ['tab' => 'pricing'])->with('success', 'Fiyat ayarları kaydedildi.');
     }
 
     public function update(Request $request): RedirectResponse
