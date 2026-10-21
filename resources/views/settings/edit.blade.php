@@ -110,18 +110,77 @@
                         <span class="leading-tight"><span class="block text-sm font-bold tracking-tight text-slate-900">{{ \App\Support\Brand::name() }}</span><span class="block text-[11px] font-medium text-slate-500">{{ \App\Support\Brand::tagline() ?: '—' }}</span></span>
                         <span class="ml-auto text-[11px] text-slate-400">Menüde böyle görünüyor</span>
                     </div>
-                    <div class="sm:col-span-2 border-t border-slate-100 pt-4"><div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Banka (Garanti maaş dosyası)</div></div>
-                    <div><label class="form-label">Banka kurum kodu</label><div class="relative"><i class="fa-solid fa-hashtag pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i><input name="bank_corp_code" value="{{ old('bank_corp_code', $values['bank_corp_code']) }}" placeholder="615399" class="form-input pl-8 font-mono"></div></div>
-                    <div><label class="form-label">Şube kodu</label><div class="relative"><i class="fa-solid fa-code-branch pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i><input name="bank_branch_code" value="{{ old('bank_branch_code', $values['bank_branch_code']) }}" placeholder="544" class="form-input pl-8 font-mono"></div></div>
-                    <div class="sm:col-span-2"><label class="form-label">Maaş ödeme hesabı</label><div class="relative"><i class="fa-solid fa-wallet pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i><input name="bank_account" value="{{ old('bank_account', $values['bank_account']) }}" placeholder="6290915" class="form-input pl-8 font-mono"></div></div>
-                    <div class="sm:col-span-2 rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-3 text-xs text-slate-500">
-                        <i class="fa-solid fa-file-excel mr-1 text-emerald-600"></i>Banka dosyasında personelin IBAN, şube ve hesap bilgileri personel kartından, tutar bordrodan gelir. Bu alanlar dosyanın üst bloğunu (kurum / şube / hesap) doldurur.
-                    </div>
                 </div>
                 <div class="flex items-center justify-end border-t border-slate-100 bg-slate-50/60 px-6 py-4">
                     <button class="btn-success"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
                 </div>
             </form>
+
+            {{-- Banka hesapları --}}
+            <div x-show="tab === 'company'" x-cloak class="card overflow-hidden">
+                <div class="flex items-start gap-4 border-b border-slate-100 px-6 py-5">
+                    <div class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600"><i class="fa-solid fa-landmark"></i></div>
+                    <div class="flex-1">
+                        <h2 class="text-base font-semibold text-slate-900">Banka Hesapları</h2>
+                        <p class="mt-0.5 text-sm text-slate-500">Hangi tahsilat hangi hesaba geliyor; KDV dahil ve KDV hariç için ayrı hesap tutabilirsiniz.</p>
+                    </div>
+                    <div x-data="{ open: {{ $errors->any() && old('_form') === 'account-create' ? 'true' : 'false' }} }">
+                        <button type="button" @click="open = true" class="btn-primary"><i class="fa-solid fa-plus"></i> Yeni Hesap</button>
+                        <template x-teleport="body">
+                            <template x-if="open">
+                            <div x-show="open" @click.self="open = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                                <form method="POST" action="{{ route('accounts.store') }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-xl space-y-4 rounded-xl bg-white p-6 shadow-pop text-left">
+                                    @csrf <input type="hidden" name="_form" value="account-create">
+                                    <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Yeni banka hesabı</h3><button type="button" @click="open = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+                                    @include('settings._account_fields', ['acc' => null])
+                                    <div class="flex justify-end gap-2"><button type="button" @click="open = false" class="btn-secondary">Vazgeç</button><button class="btn-success"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button></div>
+                                </form>
+                            </div>
+                            </template>
+                        </template>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-hover">
+                        <thead><tr><th class="th">Kullanım</th><th class="th">Banka</th><th class="th">Hesap sahibi</th><th class="th">IBAN</th><th class="th">Hesap no</th><th class="th text-right">İşlem</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100">
+                        @forelse ($accounts as $acc)
+                            <tr x-data="{ edit: false }">
+                                <td class="td whitespace-nowrap">
+                                    <span class="font-medium text-slate-900">{{ $acc->label }}</span>
+                                    @if ($acc->is_payroll)<span class="badge-info ml-1.5" title="Garanti maaş dosyası bu hesapla üretilir"><i class="fa-solid fa-file-invoice-dollar"></i>Maaş</span>@endif
+                                    @if ($acc->note)<div class="text-[11px] text-slate-400">{{ $acc->note }}</div>@endif
+                                </td>
+                                <td class="td whitespace-nowrap">{{ $acc->bank_name ?: '—' }}</td>
+                                <td class="td whitespace-nowrap">{{ $acc->account_holder ?: '—' }}</td>
+                                <td class="td whitespace-nowrap font-mono text-xs">{{ $acc->iban_pretty ?: '—' }}</td>
+                                <td class="td whitespace-nowrap font-mono text-xs">{{ $acc->account_no ?: '—' }}@if ($acc->branch_code)<div class="text-[11px] text-slate-400">şube {{ $acc->branch_code }}</div>@endif</td>
+                                <td class="td text-right whitespace-nowrap">
+                                    <div class="inline-flex items-center gap-2">
+                                        <button type="button" @click="edit = true" class="btn-icon" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+                                        <x-confirm-form :action="route('accounts.destroy', $acc)" title="Hesabı sil" :message="$acc->label.' kaydı silinecek.'"><i class="fa-solid fa-trash"></i></x-confirm-form>
+                                    </div>
+                                    <template x-teleport="body">
+                                        <template x-if="edit">
+                                        <div x-show="edit" @click.self="edit = false" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                                            <form method="POST" action="{{ route('accounts.update', $acc) }}" class="max-h-[calc(100vh-2rem)] overflow-y-auto w-full max-w-xl space-y-4 rounded-xl bg-white p-6 shadow-pop text-left">
+                                                @csrf @method('PUT')
+                                                <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">{{ $acc->label }}</h3><button type="button" @click="edit = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+                                                @include('settings._account_fields', ['acc' => $acc])
+                                                <div class="flex justify-end gap-2"><button type="button" @click="edit = false" class="btn-secondary">Vazgeç</button><button class="btn-success"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button></div>
+                                            </form>
+                                        </div>
+                                        </template>
+                                    </template>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="6" class="px-5 py-10 text-center text-sm text-slate-500">Henüz banka hesabı eklenmemiş. Sağ üstten <b>Yeni Hesap</b> ekleyin.</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
             @endif
 

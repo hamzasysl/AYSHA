@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\AgreementController;
+use App\Http\Controllers\CompanyAccountController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseCategoryController;
@@ -99,6 +100,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:manage')->group(function () {
         Route::put('/ayarlar', [SettingController::class, 'update'])->name('settings.update');
         Route::put('/ayarlar/m2-fiyatlari', [SettingController::class, 'pricing'])->name('settings.pricing');
+        Route::post('/ayarlar/hesaplar', [CompanyAccountController::class, 'store'])->name('accounts.store');
+        Route::put('/ayarlar/hesaplar/{account}', [CompanyAccountController::class, 'update'])->name('accounts.update');
+        Route::delete('/ayarlar/hesaplar/{account}', [CompanyAccountController::class, 'destroy'])->name('accounts.destroy');
         Route::post('/ayarlar/kullanicilar', [UserController::class, 'store'])->name('users.store');
         Route::put('/ayarlar/kullanicilar/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/ayarlar/kullanicilar/{user}', [UserController::class, 'destroy'])->name('users.destroy');

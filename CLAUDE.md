@@ -100,7 +100,8 @@ php artisan test
 ## Gerçek veri ve banka entegrasyonu
 - Gerçek personel Garanti "TGB Yeni Maaş Dosyası" Excel'inden aktarılır: `php artisan aysha:import-garanti dosya.xlsx [--period=2026-07] [--dry-run]`
   (TC → IBAN → ad-soyad ile eşler, var olanı günceller; `--period` verilirse Tutar sütunu o ayın bordrosu olarak işlenir, 0 = bekliyor).
-- Muhasebe > Maaşlar sekmesi > "Banka Dosyası": aynı formatta xlsx üretir (`app/Support/GarantiPayrollFile.php`); kurum/şube/hesap `Setting` tablosundan.
+- Muhasebe > Maaşlar sekmesi > "Banka Dosyası": aynı formatta xlsx üretir (`app/Support/GarantiPayrollFile.php`); kurum/şube/hesap `CompanyAccount::payroll()` kaydından gelir (yoksa eski `Setting` anahtarlarına düşer).
+- Şirketin banka hesapları `company_accounts` (Ayarlar > Şirket & Marka > Banka Hesapları, `CompanyAccountController`): label = kullanım amacı ("KDV dahil tahsilat" gibi), bank_name (Ayarlar'daki banka listesinden, serbest giriş açık), account_holder, iban (boşluksuz saklanır, `iban_pretty` ile 4'erli gösterilir, `TR`+24 hane doğrulanır), account_no, branch_code, corp_code, is_payroll. `is_payroll` TEK kayıtta olabilir (`CompanyAccount::saved` diğerlerini düşürür). Eski `bank_corp_code/bank_branch_code/bank_account` ayarları migration ile hesaba taşındı; Ayarlar'da artık o alanlar YOK.
 - Personelde `is_retired` (emekli), `meal_allowance` / `travel_allowance` (boşsa `Setting` varsayılanları: standart 7.800 / 3.628, emekli ayrı),
   `bank_code` / `branch_code` / `account_no`. Muhasebe > "Yemek & Yol Oluştur" tüm aktif personele aylık kayıt açar (`effective_*_allowance`).
 - DemoSeeder sahte veri üretir; canlı DB'de gerçek 25 personel var — demo'yu gerçek verinin üstüne çalıştırma.

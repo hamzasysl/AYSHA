@@ -21,15 +21,18 @@ class GarantiPayrollFile
 {
     public static function build(Collection $rows, string $description, \DateTimeInterface $paymentDate, string $paymentType = 'M'): Spreadsheet
     {
+        // Maaş dosyası, Ayarlar > Şirket & Marka'da "maaş hesabı" işaretli hesapla üretilir
+        $acc = \App\Models\CompanyAccount::payroll();
+
         $wb = new Spreadsheet;
         $ws = $wb->getActiveSheet();
         $ws->setTitle('TGB Yeni Maaş Dosyası');
         $wb->getDefaultStyle()->getFont()->setName('Arial')->setSize(10);
 
         $header = [
-            ['Kurum Kodu', Setting::get('bank_corp_code', ''), 'Garanti Bankası tarafından verilen kurum kodunuz.'],
-            ['Şube Kodu', Setting::get('bank_branch_code', ''), 'Şubenizden öğreniniz'],
-            ['Hesap', Setting::get('bank_account', ''), 'Maaş ödemesinde kullanacağınız hesap. 1299998-2 şeklinde kontrol digiti girmeyiniz.'],
+            ['Kurum Kodu', $acc?->corp_code ?? Setting::get('bank_corp_code', ''), 'Garanti Bankası tarafından verilen kurum kodunuz.'],
+            ['Şube Kodu', $acc?->branch_code ?? Setting::get('bank_branch_code', ''), 'Şubenizden öğreniniz'],
+            ['Hesap', $acc?->account_no ?? Setting::get('bank_account', ''), 'Maaş ödemesinde kullanacağınız hesap. 1299998-2 şeklinde kontrol digiti girmeyiniz.'],
             ['Toplam Adet', '=COUNTA(A13:A5000)', 'Toplam maaş adedi. (Giriş yapıldıkça otomatik olarak hesaplanır.)'],
             ['Toplam Tutar', '=SUM(G13:G5000)', 'Toplam ödeme tutarı. (Giriş yapıldıkça otomatik olarak hesaplanır.)'],
             ['Döviz Kodu', 'TL ', 'Döviz kodunu listeden seçiniz.'],
