@@ -18,15 +18,19 @@ class SettingController extends Controller
         // Giriş geçmişi tablosu henüz oluşmadıysa (deploy edilip migration çalıştırılmadıysa)
         // sayfa patlamamalı — Sistem sekmesindeki güncelleme düğmesi bu sayfada.
         $users = \App\Models\User::orderBy('name')->get();
-        if (Schema::hasTable('login_logs')) {
-            $users->load(['loginLogs' => fn ($q) => $q->limit(25)]);
-            $users->loadCount(['loginLogs as successful_logins_count' => fn ($q) => $q->where('successful', true)]);
-        } else {
-            $users->each(function ($u) {
-                $u->setRelation('loginLogs', collect());
-                $u->successful_logins_count = 0;
-            });
-        }
+        // Giriş kayıtları tek sorguda çekilip kullanıcıya göre gruplanır (pencere fonksiyonu
+        // gerektiren limitli eager load bazı MySQL sürümlerinde eksik sonuç veriyordu).
+        $logsByUser = Schema::hasTable('login_logs')
+            ? \App\Models\LoginLog::latest('created_at')->latest('id')->get()->groupBy('user_id')
+            : collect();
+
+        $users->each(function ($u) use ($logsByUser) {
+            $mine = $logsByUser->get($u->id, collect());
+            $u->setRelation('loginLogs', $mine->take(200)->values());
+            $u->successful_logins_count = $mine->where('successful', true)->count();
+            $u->total_logins_count = $mine->count();
+        });
+
         $categories = \App\Models\ExpenseCategory::orderBy('sort')->orderBy('id')->get();
         $categoryUsage = \App\Models\Expense::selectRaw('category, COUNT(*) as c')->groupBy('category')->pluck('c', 'category');
 
@@ -37,21 +41,9 @@ class SettingController extends Controller
             'leave_type' => \App\Models\Leave::selectRaw('type as k, COUNT(*) as c')->groupBy('type')->pluck('c', 'k'),
         ];
 
-        // Tüm kullanıcıların giriş kayıtları (kim, ne zaman, nereden)
-        $hasLoginLogs = Schema::hasTable('login_logs');
-        $loginLogs = $hasLoginLogs
-            ? \App\Models\LoginLog::with('user')->latest('created_at')->latest('id')->limit(100)->get()
-            : collect();
-        $loginStats = $hasLoginLogs ? [
-            'total' => \App\Models\LoginLog::count(),
-            'ok' => \App\Models\LoginLog::where('successful', true)->count(),
-            'fail' => \App\Models\LoginLog::where('successful', false)->count(),
-            'first' => \App\Models\LoginLog::min('created_at'),
-        ] : ['total' => 0, 'ok' => 0, 'fail' => 0, 'first' => null];
-
         $pendingMigrations = SystemController::status()['pending'];
 
-        return view('settings.edit', compact('values', 'users', 'categories', 'categoryUsage', 'lists', 'listUsage', 'pendingMigrations', 'loginLogs', 'loginStats'));
+        return view('settings.edit', compact('values', 'users', 'categories', 'categoryUsage', 'lists', 'listUsage', 'pendingMigrations'));
     }
 
     /** Ayarlar > m² Fiyatları (m² Hesaplayıcı'nın standart tutarları). */

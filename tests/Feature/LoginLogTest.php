@@ -64,27 +64,44 @@ class LoginLogTest extends TestCase
             ->assertSee('Başarılı');
     }
 
-    public function test_settings_lists_every_users_logins_in_one_place(): void
+    public function test_remembered_logins_from_other_devices_are_recorded(): void
     {
-        $admin = \App\Models\User::factory()->create(['role' => 'admin', 'name' => 'Ayşenur Miran', 'username' => 'ayse', 'email' => 'ayse@ttb.test']);
-        $other = \App\Models\User::factory()->create(['role' => 'editor', 'name' => 'Batuhan Şençağ', 'username' => 'batuhan', 'email' => 'batuhan@ttb.test']);
+        $u = \App\Models\User::factory()->create(['username' => 'ayse', 'email' => 'ayse@ttb.test']);
 
-        // Başka bir bilgisayardan başka bir kullanıcının girişi
+        // Formdan giriş (beni hatırla işaretli)
         $this->withServerVariables(['REMOTE_ADDR' => '88.241.10.5'])
             ->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0'])
-            ->post('/giris', ['login' => 'batuhan', 'password' => 'password'])->assertRedirect();
-        $this->post('/cikis');
+            ->post('/giris', ['login' => 'ayse', 'password' => 'password', 'remember' => '1'])->assertRedirect();
+        $this->assertSame(1, \App\Models\LoginLog::count(), 'form girişi tek kayıt yazmalı');
 
-        // Hatalı deneme
-        $this->post('/giris', ['login' => 'batuhan', 'password' => 'yanlis'])->assertSessionHasErrors('login');
+        // "Beni hatırla" çerezinden açılan oturum giriş formundan geçmez ama aynı Login
+        // olayını tetikler (SessionGuard::user() -> fireLoginEvent); dinleyici onu da yazar.
+        $this->app['auth']->forgetGuards();
+        $this->flushSession();
+        request()->server->set('REMOTE_ADDR', '78.180.4.9');
+        request()->headers->set('User-Agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Safari/605.1');
+        \Illuminate\Support\Facades\Auth::guard('web')->login($u, true);
 
-        $r = $this->actingAs($admin)->get('/ayarlar?tab=logins')->assertOk();
-        $r->assertSee('Oturum Geçmişi')
-            ->assertSee('Batuhan Şençağ')      // başkasının girişi de görünür
-            ->assertSee('88.241.10.5')
-            ->assertSee('Hatalı şifre');
+        $this->assertSame(2, \App\Models\LoginLog::count(), 'çerezden açılan oturum da kaydedilmeli');
+        $son = \App\Models\LoginLog::latest('id')->first();
+        $this->assertSame($u->id, $son->user_id);
+        $this->assertSame('78.180.4.9', $son->ip);
+        $this->assertStringContainsString('iPhone', $son->device_label);
+    }
 
-        $this->assertSame(2, \App\Models\LoginLog::count());
-        $this->assertSame($other->id, \App\Models\LoginLog::where('successful', true)->first()->user_id);
+    public function test_user_history_modal_shows_every_device(): void
+    {
+        $admin = \App\Models\User::factory()->create(['role' => 'admin', 'name' => 'Ayşenur Miran', 'username' => 'ayse', 'email' => 'ayse@ttb.test']);
+        foreach ([['88.241.10.5', 'Windows NT 10.0'], ['78.180.4.9', 'Macintosh; Intel Mac OS X 10_15']] as [$ip, $ua]) {
+            \App\Models\LoginLog::create([
+                'user_id' => $admin->id, 'login' => 'ayse', 'successful' => true,
+                'ip' => $ip, 'device' => 'Masaüstü', 'platform' => 'x', 'browser' => 'Chrome', 'user_agent' => $ua,
+            ]);
+        }
+
+        $this->actingAs($admin)->get('/ayarlar?tab=users')->assertOk()
+            ->assertSee('88.241.10.5')->assertSee('78.180.4.9')
+            ->assertSee('Tüm kayıtlar')
+            ->assertDontSee('Kim nereden girmiş');   // ayrı sekme kaldırıldı
     }
 }

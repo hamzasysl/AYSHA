@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\LoginLog;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +21,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Carbon::setLocale('tr');
+
+        // Her başarılı giriş kaydedilir: giriş formundan ya da "beni hatırla" çerezinden
+        // otomatik açılan oturumlar dahil. Böylece başka cihazlardan girişler de görünür.
+        Event::listen(Login::class, function (Login $event) {
+            LoginLog::record(request(), $event->user, $event->user->username ?? $event->user->email ?? '', true);
+        });
 
         // Yetkiler: edit (ekle/düzenle), delete (sil), manage (ayarlar + kullanıcılar)
         Gate::define('edit', fn ($user) => $user->canEdit());

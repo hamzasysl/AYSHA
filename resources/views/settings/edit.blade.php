@@ -4,7 +4,7 @@
         {{-- Sol menü --}}
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <nav class="card p-2">
-                @php $tabs = ['allowances' => ['fa-utensils', 'Yemek & Yol Ücretleri', 'Aylık standart tutarlar'], 'pricing' => ['fa-ruler-combined', 'Fiyatlar & KDV', 'm² fiyatı ve KDV oranı'], 'company' => ['fa-building-columns', 'Şirket & Marka', 'Görünen ad ve banka bilgileri'], 'account' => ['fa-user-shield', 'Hesap', 'Ad, kullanıcı adı, şifre'], 'users' => ['fa-users-gear', 'Kullanıcılar', 'Sisteme giriş yapabilenler'], 'categories' => ['fa-tags', 'Gider Kategorileri', 'Muhasebedeki kategoriler'], 'lists' => ['fa-list-check', 'Listeler', 'Görevler, bankalar, izin türleri'], 'logins' => ['fa-clock-rotate-left', 'Oturum Geçmişi', 'Kim nereden girmiş'], 'system' => ['fa-server', 'Sistem', 'Güncelleme ve önbellek']]; if (! $manager) { $tabs = ['account' => $tabs['account']]; } @endphp
+                @php $tabs = ['allowances' => ['fa-utensils', 'Yemek & Yol Ücretleri', 'Aylık standart tutarlar'], 'pricing' => ['fa-ruler-combined', 'Fiyatlar & KDV', 'm² fiyatı ve KDV oranı'], 'company' => ['fa-building-columns', 'Şirket & Marka', 'Görünen ad ve banka bilgileri'], 'account' => ['fa-user-shield', 'Hesap', 'Ad, kullanıcı adı, şifre'], 'users' => ['fa-users-gear', 'Kullanıcılar', 'Sisteme giriş yapabilenler'], 'categories' => ['fa-tags', 'Gider Kategorileri', 'Muhasebedeki kategoriler'], 'lists' => ['fa-list-check', 'Listeler', 'Görevler, bankalar, izin türleri'], 'system' => ['fa-server', 'Sistem', 'Güncelleme ve önbellek']]; if (! $manager) { $tabs = ['account' => $tabs['account']]; } @endphp
                 @foreach ($tabs as $key => [$icon, $label, $desc])
                     <button type="button" @click="tab = '{{ $key }}'" :class="tab === '{{ $key }}' ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-50'" class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition">
                         <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white"><i class="fa-solid {{ $icon }} text-sm" :class="tab === '{{ $key }}' ? 'text-brand-600' : 'text-slate-400'"></i></span>
@@ -233,7 +233,7 @@
                                                         <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-100">{{ mb_strtoupper(mb_substr($u->name, 0, 1)) }}</span>
                                                         <div class="min-w-0 flex-1">
                                                             <div class="truncate text-[15px] font-medium leading-tight text-slate-900">{{ $u->name }}</div>
-                                                            <div class="mt-0.5 truncate text-xs text-slate-500">Oturum geçmişi · toplam {{ $u->successful_logins_count }} başarılı giriş</div>
+                                                            <div class="mt-0.5 truncate text-xs text-slate-500">Oturum geçmişi · {{ $u->total_logins_count }} kayıt · {{ $u->successful_logins_count }} başarılı giriş</div>
                                                         </div>
                                                         <button type="button" @click="history = false" class="grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" title="Kapat"><i class="fa-solid fa-xmark"></i></button>
                                                     </div>
@@ -243,7 +243,7 @@
                                                         @else
                                                             <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
                                                                 <table class="min-w-full">
-                                                                    <thead><tr><th class="th">Tarih / saat</th><th class="th">Cihaz</th><th class="th">IP</th><th class="th">Durum</th></tr></thead>
+                                                                    <thead><tr><th class="th">Tarih / saat</th><th class="th">Cihaz</th><th class="th">IP (nereden)</th><th class="th">Durum</th></tr></thead>
                                                                     <tbody class="divide-y divide-slate-100">
                                                                     @foreach ($u->loginLogs as $log)
                                                                         <tr>
@@ -256,7 +256,14 @@
                                                                     </tbody>
                                                                 </table>
                                                             </div>
-                                                            <p class="mt-3 text-[11px] text-slate-500">Son {{ $u->loginLogs->count() }} kayıt gösteriliyor. Hatalı şifre denemeleri de listelenir.</p>
+                                                            <p class="mt-3 text-[11px] text-slate-500">
+                                                                @if ($u->total_logins_count > $u->loginLogs->count())
+                                                                    {{ $u->total_logins_count }} kaydın son {{ $u->loginLogs->count() }} tanesi gösteriliyor.
+                                                                @else
+                                                                    Tüm kayıtlar ({{ $u->loginLogs->count() }}) gösteriliyor; hiçbiri silinmez.
+                                                                @endif
+                                                                Hatalı şifre denemeleri ve "beni hatırla" ile açılan oturumlar da listelenir.
+                                                            </p>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -421,47 +428,6 @@
                     </div>
                 </div>
                 @endforeach
-            </div>
-
-            {{-- Oturum geçmişi: bütün kullanıcıların girişleri --}}
-            <div x-show="tab === 'logins'" x-cloak class="card overflow-hidden">
-                <div class="flex items-start gap-4 border-b border-slate-100 px-6 py-5">
-                    <div class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                    <div class="flex-1">
-                        <h2 class="text-base font-semibold text-slate-900">Oturum Geçmişi</h2>
-                        <p class="mt-0.5 text-sm text-slate-500">Bütün kullanıcıların girişleri: kim, ne zaman, hangi IP ve cihazdan. Hatalı şifre denemeleri de listelenir. Kayıtlar silinmez; aşağıda en son 100 tanesi listelenir.</p>
-                        @if ($loginStats['first'])
-                            <p class="mt-1 text-[11px] text-slate-400">İlk kayıt: {{ \Illuminate\Support\Carbon::parse($loginStats['first'])->format('d.m.Y H:i') }}</p>
-                        @endif
-                    </div>
-                    @if ($loginStats['total'] > 0)
-                        <div class="shrink-0 text-right text-xs text-slate-500">
-                            <div><b class="text-slate-800">{{ $loginStats['total'] }}</b> kayıt</div>
-                            <div><b class="text-emerald-700">{{ $loginStats['ok'] }}</b> başarılı · <b class="text-red-600">{{ $loginStats['fail'] }}</b> hatalı</div>
-                        </div>
-                    @endif
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full table-hover">
-                        <thead><tr><th class="th">Kullanıcı</th><th class="th">Tarih / saat</th><th class="th">IP</th><th class="th">Cihaz</th><th class="th">Durum</th></tr></thead>
-                        <tbody class="divide-y divide-slate-100">
-                        @forelse ($loginLogs as $log)
-                            <tr>
-                                <td class="td whitespace-nowrap">
-                                    <span class="font-medium text-slate-900">{{ $log->user?->name ?? '—' }}</span>
-                                    <div class="font-mono text-[11px] text-slate-400">{{ $log->login }}</div>
-                                </td>
-                                <td class="td whitespace-nowrap text-slate-600">{{ $log->created_at->format('d.m.Y H:i') }}<div class="text-[11px] text-slate-400">{{ $log->created_at->diffForHumans() }}</div></td>
-                                <td class="td whitespace-nowrap font-mono text-xs text-slate-600">{{ $log->ip ?: '—' }}</td>
-                                <td class="td whitespace-nowrap text-xs text-slate-600"><i class="fa-solid {{ $log->device_icon }} mr-1.5 text-slate-400"></i>{{ $log->device_label }}</td>
-                                <td class="td whitespace-nowrap"><span class="{{ $log->successful ? 'badge-ok' : 'badge-danger' }}">{{ $log->successful ? 'Başarılı' : 'Hatalı şifre' }}</span></td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="5" class="px-5 py-10 text-center text-sm text-slate-500">Henüz giriş kaydı yok. Kayıtlar bu özellik yüklendikten sonraki girişlerden itibaren tutulur.</td></tr>
-                        @endforelse
-                        </tbody>
-                    </table>
-                </div>
             </div>
 
             {{-- Sistem: güncelleme ve önbellek --}}

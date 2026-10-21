@@ -47,9 +47,9 @@ class LoginController extends Controller
             ]);
         }
 
+        // Başarılı giriş kaydını AppServiceProvider'daki Login olayı dinleyicisi yazar.
         RateLimiter::clear($key);
         $request->session()->regenerate();
-        LoginLog::record($request, $request->user(), $login, true);
 
         return redirect()->intended(route('dashboard'));
     }
